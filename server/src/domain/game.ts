@@ -1,4 +1,5 @@
-import Player from "./player"
+import {Player} from "./player"
+import {GameAlreadyRunningError, GameEndedError} from "../errors/management_errors"
 
 export class Game {
   private players: Player[];
@@ -11,17 +12,31 @@ export class Game {
   }
 
   addPlayer(player: Player): void {
-    if (this.status == "waiting") {
+    if (this.status === "waiting") {
       if (!this.players.includes(player)) {
         this.players.push(player);
       }}
-    else {
-      console.log("This game cannot welcome any more players for it has already started or is finished")
+    else if (this.status === "running") {
+      throw GameAlreadyRunningError(`This game cannot welcome any more players for it has already started`)
+    }
+    else if (this.status === "finished") {
+      throw GameEndedError('This game cannot welcome any more players for it is already finished');
     }
   }
 
   removePlayer(player: Player): void {
     this.players = this.players.filter((p) => p !== player);
+  }
+
+  startRound() {
+    this.status = 'running'
+  }
+
+  isEmpty(): boolean {
+    if (this.players.length === 0) {
+      return true
+    }
+    return false
   }
 }
 
