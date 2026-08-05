@@ -17,10 +17,14 @@ export class Game {
         this.players.push(player);
       }}
     else if (this.status === "running") {
-      throw GameAlreadyRunningError(`This game cannot welcome any more players for it has already started`)
+      throw new GameAlreadyRunningError(
+        'This game cannot welcome any more players for it has already started',
+      );
     }
     else if (this.status === "finished") {
-      throw GameEndedError('This game cannot welcome any more players for it is already finished');
+      throw new GameEndedError(
+        'This game cannot welcome any more players for it is already finished',
+      );
     }
   }
 
@@ -33,10 +37,6 @@ export class Game {
   }
 
   isEmpty(): boolean {
-    if (this.players.length === 0) {
-      return true
-    }
-    return false
+    return this.players.length === 0
   }
 }
-

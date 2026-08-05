@@ -18,5 +18,5 @@ export class Player {
   getSocketId() {return this.socketId}
   getName(){return this.name}
   getState() {return this.alive}
-
+  isHost() { return this.host}
 }

@@ -19,7 +19,7 @@ export class GameRoomRegistry {
   addPlayerToRoom(name: string, player: Player) {
     let game = this.getRoomByName(name)
 
-    if (game == undefined) {
+    if (game === undefined) {
       game = new Game(player)
       this.games.set(name, game)
       return game
@@ -30,7 +30,7 @@ export class GameRoomRegistry {
     }
   }
 
-  removePlayerfromRoom(name: string, player: Player) {
+  removePlayerFromRoom(name: string, player: Player) {
     const game = this.getRoomByName(name)
 
     if (game == undefined)
