@@ -1,14 +1,17 @@
 import {Player} from "./player"
 import {GameAlreadyRunningError, GameEndedError} from "../errors/management_errors"
+import {HostSuccessionResolver} from "./host_succession_resolver"
 
 export class Game {
   private players: Player[];
+  private readonly hostSuccessionResolver: HostSuccessionResolver;
   status: 'waiting' | 'running' | 'finished';
 
   constructor(owner: Player) {
-    owner.promoteToHost();
     this.players = [owner];
     this.status = 'waiting';
+    this.hostSuccessionResolver = new HostSuccessionResolver();
+    this.hostSuccessionResolver.ensureRoomHasExactlyOneHost(this.players);
   }
 
   addPlayer(player: Player): void {
@@ -29,7 +32,9 @@ export class Game {
   }
 
   removePlayer(player: Player): void {
-    this.players = this.players.filter((p) => p !== player);
+    this.players = this.players.filter((remainingPlayer) => remainingPlayer !== player);
+    player.demoteFromHost();
+    this.hostSuccessionResolver.ensureRoomHasExactlyOneHost(this.players);
   }
 
   startRound() {
@@ -39,4 +44,6 @@ export class Game {
   isEmpty(): boolean {
     return this.players.length === 0
   }
+
+  getRoomPublicState() {return this.status}
 }
