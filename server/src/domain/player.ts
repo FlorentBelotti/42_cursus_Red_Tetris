@@ -3,25 +3,7 @@ import {
   type SpectrumColumnHeights,
 } from 'shared/src/domain_types/spectrum_column_heights';
 
-/**
- * One player seated in a room.
- *
- * A player has two identifiers, and they are deliberately not the same thing:
- *
- * - `playerId` is the identity opponents know. It is what the protocol carries
- *   as `playerId`, and it never changes for as long as the player is seated.
- * - `socketId` is the current connection. socket.io hands out a fresh one on
- *   every reconnection, so this one can change.
- *
- * Today both hold the same value, because a disconnection frees the seat
- * immediately and a returning player is simply a new player. Keeping the two
- * apart costs nothing now and is what would make reconnection possible later
- * without the public identity of a player changing mid-round — which would
- * otherwise break every client keying opponent state by `playerId`, and would
- * mean amending the shared protocol.
- *
- * Always send `getPlayerId()` over the wire, never `getSocketId()`.
- */
+
 export class Player {
   private host: boolean
   private alive: boolean
