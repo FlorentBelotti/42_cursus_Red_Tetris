@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TetrominoType } from 'shared/src/game_rules/tetromino_type_enum';
+import { TetrominoType } from 'shared';
 
 import { Piece } from './piece';
 

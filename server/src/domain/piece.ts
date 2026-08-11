@@ -1,4 +1,4 @@
-import { TetrominoType } from 'shared/src/game_rules/tetromino_type_enum';
+import { TetrominoType } from 'shared';
 
 export interface PieceSpawnCoordinates {
   readonly spawnColumn: number;
