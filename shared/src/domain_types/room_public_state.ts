@@ -1,11 +1,3 @@
-/**
- * Everything a client is told about the room it sits in.
- *
- * Sent in full on every update rather than as a delta: a room holds a handful
- * of players, so the payload is small, and a client that receives the whole
- * state cannot drift out of sync with the server no matter which broadcast it
- * missed.
- */
 import { PlayerPublicState } from './player_public_state';
 
 /** Where a room is in its round cycle. */

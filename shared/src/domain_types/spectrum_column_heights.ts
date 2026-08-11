@@ -1,14 +1,3 @@
-/**
- * A player's spectrum: the height of the highest occupied cell in each column
- * of their board, one entry per column, left to right.
- *
- * This is the only thing opponents ever learn about a board. The server never
- * holds a board matrix (D1), so it relays spectrums verbatim and this type is
- * the whole of what it knows.
- *
- * A height of 0 means the column is empty; a height of BOARD_ROW_COUNT means
- * it is full to the ceiling.
- */
 import { BOARD_COLUMN_COUNT, BOARD_ROW_COUNT } from '../game_rules/board_dimension_constants';
 
 /** One height per board column, left to right. */
