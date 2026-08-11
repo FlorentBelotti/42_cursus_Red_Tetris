@@ -1,9 +1,3 @@
-/**
- * Builds the Express application that serves the built client: its static
- * assets first, then the Single Page Application fallback for everything else.
- * Express is used for static serving only (see CLAUDE.md §2) — all gameplay
- * traffic travels over socket.io.
- */
 import path from 'node:path';
 import express from 'express';
 import type { Express } from 'express';

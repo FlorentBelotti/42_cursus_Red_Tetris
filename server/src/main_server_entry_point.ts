@@ -1,70 +1,41 @@
-/**
- * Bootstraps the HTTP + socket.io server: serves the built client SPA with a
- * catch-all fallback route, and starts listening. No game/domain logic lives
- * here — see server/src/domain and server/src/socket for that once it exists.
- */
-import path from 'node:path';
 import { createServer } from 'node:http';
-import dotenv from 'dotenv';
-import express from 'express';
-import { Server as SocketIoServer } from 'socket.io';
+import type { Server as HttpServer } from 'node:http';
 
-dotenv.config();
-
-const DEFAULT_SERVER_PORT = 3001;
+import { loadServerConfiguration } from './config/server_configuration_loader';
+import {
+  createStaticAssetHttpApplication,
+  resolveClientBuildDirectoryPath,
+} from './http/static_asset_http_server';
+import { bootstrapSocketServer } from './socket/socket_server_bootstrap';
 
 /**
- * Reads the HTTP port from the environment, falling back to a default.
+ * Builds the HTTP server that serves the client SPA, with a socket.io server
+ * attached to it. Socket event handlers are registered by server/src/socket
+ * once the protocol is implemented.
  *
- * @returns The port number the server should listen on.
+ * @returns An HTTP server that is not listening yet.
  */
-function readServerPortFromEnvironment(): number {
-  const rawPortValue = process.env.PORT;
-
-  if (rawPortValue === undefined) {
-    return DEFAULT_SERVER_PORT;
-  }
-
-  return Number.parseInt(rawPortValue, 10);
-}
-
-/**
- * Builds the Express application: serves the client's built static assets
- * and falls back to index.html for any unmatched route, so client-side
- * routing (BrowserRouter) can resolve deep links such as /<room>/<player>.
- *
- * @param clientBuildDirectory - Absolute path to the client's built assets.
- * @returns A configured Express application.
- */
-function createExpressApplication(clientBuildDirectory: string): express.Express {
-  const application = express();
-
-  application.use(express.static(clientBuildDirectory));
-
-  application.get('*', (_request, response) => {
-    response.sendFile(path.join(clientBuildDirectory, 'index.html'));
-  });
-
-  return application;
-}
-
-/**
- * Starts the HTTP server and attaches a socket.io server to it. No event
- * handlers are registered yet — that is the responsibility of
- * server/src/socket once the protocol is implemented.
- */
-function startServer(): void {
-  const clientBuildDirectory = path.join(__dirname, '../../client/dist');
-  const application = createExpressApplication(clientBuildDirectory);
+function createRedTetrisHttpServer(): HttpServer {
+  const application = createStaticAssetHttpApplication(resolveClientBuildDirectoryPath());
   const httpServer = createServer(application);
 
-  new SocketIoServer(httpServer);
+  bootstrapSocketServer(httpServer);
 
-  const port = readServerPortFromEnvironment();
+  return httpServer;
+}
 
-  httpServer.listen(port, () => {
-    console.log(`Red Tetris server listening on port ${port}`);
+/**
+ * Starts the Red Tetris server on the port given by the environment.
+ */
+export function startRedTetrisServer(): void {
+  const configuration = loadServerConfiguration();
+  const httpServer = createRedTetrisHttpServer();
+
+  httpServer.listen(configuration.httpServerPort, () => {
+    console.log(`Red Tetris server listening on port ${configuration.httpServerPort}`);
   });
 }
 
-startServer();
+if (require.main === module) {
+  startRedTetrisServer();
+}

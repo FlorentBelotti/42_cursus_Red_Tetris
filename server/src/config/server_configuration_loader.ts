@@ -1,9 +1,3 @@
-/**
- * Centralises every environment-derived setting the server needs, so that no
- * other module reads `process.env` directly. Reading, validating and defaulting
- * all happen here; the rest of the server receives a plain, already-validated
- * `ServerConfiguration` object.
- */
 import dotenv from 'dotenv';
 
 const DEFAULT_HTTP_SERVER_PORT = 3001;

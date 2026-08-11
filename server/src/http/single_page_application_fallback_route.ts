@@ -1,9 +1,3 @@
-/**
- * The catch-all route that makes the client a true Single Page Application
- * (C5): any request that did not match a static asset is answered with
- * `index.html`, so that deep links such as `/<room>/<player_name>` (C6) are
- * resolved by the client-side router instead of returning a 404.
- */
 import path from 'node:path';
 import type { Express } from 'express';
 
