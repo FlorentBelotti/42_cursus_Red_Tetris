@@ -1,7 +1,4 @@
-import {
-  createEmptySpectrumColumnHeights,
-  type SpectrumColumnHeights,
-} from 'shared/src/domain_types/spectrum_column_heights';
+import { createEmptySpectrumColumnHeights, type SpectrumColumnHeights } from 'shared';
 
 
 export class Player {

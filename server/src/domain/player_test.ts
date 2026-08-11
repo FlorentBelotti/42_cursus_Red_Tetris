@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { BOARD_COLUMN_COUNT } from 'shared/src/game_rules/board_dimension_constants';
+import { BOARD_COLUMN_COUNT } from 'shared';
 
 import { Player } from './player';
 
