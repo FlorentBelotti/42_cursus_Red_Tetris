@@ -269,11 +269,10 @@ active piece is never written into the board until it locks).
 
 ---
 
-## 7. Socket protocol — **PROPOSAL, pending ratification**
+## 7. Socket protocol — **ratified 2026-08-07**
 
-> ⚠️ This section is a starting proposal, not a decision. Both owners review and
-> ratify (or amend) it in the day-1 pair session, then remove this warning.
-> Until ratified, treat any implementation against it as provisional.
+> This section is now a decision, not a proposal. Amending it means a joint
+> commit on `shared/src/protocol/` and an immediate rebase on both sides (§5).
 
 Event names live in `shared/src/protocol/socket_event_names.ts` as a frozen
 constant object. Payload types live in the two payload files. Both sides import
@@ -295,7 +294,7 @@ the typed `Socket` interfaces — no untyped `emit` anywhere.
 | Event | Payload | Notes |
 |---|---|---|
 | `room:join_accepted` | `{ playerId, isHost, roomState }` | The reply to `room:join_request`. See the note below. |
-| `room:join_rejected` | `{ reasonCode }` | `game_already_started` \| `player_name_already_taken` \| `invalid_room_name` |
+| `room:join_rejected` | `{ reasonCode }` | `game_already_started` \| `player_name_already_taken` \| `invalid_room_name` \| `invalid_player_name` |
 | `room:state_updated` | `{ roomState }` | Player list, host id, status. Broadcast on any membership change. |
 | `game:round_started` | `{ pieceSequenceSeed }` | Client seeds its generator and begins. |
 | `game:penalty_lines_received` | `{ penaltyLineCount, sourcePlayerId }` | |
@@ -311,10 +310,10 @@ reply as a pair of events instead of an ack callback keeps the protocol
 uniformly event-based, so the client's socket middleware (D4) only ever maps
 *received event → dispatched action* and never has to hold a pending closure.
 
-**Open questions to settle when ratifying:**
+**Decisions taken at ratification.** These are settled; reopening one is an
+amendment to this section, not a judgement call at the call site.
 
-1. ~~Does the server acknowledge `player:lines_cleared`, or is it
-   fire-and-forget?~~ **Settled: fire-and-forget.** Applies to all three
+1. **Acknowledgement on `player:lines_cleared`: fire-and-forget.** Applies to all three
    client-to-server progress events — `player:lines_cleared`,
    `player:spectrum_update` and `player:game_over_report`. None of them carries
    a socket.io acknowledgement callback, so none appears in
@@ -326,9 +325,28 @@ uniformly event-based, so the client's socket middleware (D4) only ever maps
    change in behaviour. Where the client genuinely needs an answer, a dedicated
    server-to-client event already exists (`room:join_accepted` /
    `room:join_rejected`).
-2. Does a reconnecting socket rejoin its previous seat, or is it a new player?
-3. Is `roomState` sent in full on every update, or as a delta? (Full is
-   recommended: N is small and it removes a class of desync bugs.)
+2. **A reconnecting socket is a new player.** A disconnection frees the seat
+   immediately: `connection_lifecycle_handler` removes the player from the room
+   on `disconnect`, host succession runs (C12), and the room is destroyed if it
+   was the last player. A returning client sends a fresh `room:join_request`
+   and is treated like anyone else — which means it is refused while a round is
+   running, exactly as C13 requires of any other latecomer.
+   *Rationale:* holding a seat open would need a grace timer, a per-player
+   connection state, an exception to C13 for returning players, and rooms that
+   survive having nobody connected — for a case C13 already forbids from
+   rejoining mid-round anyway.
+   *Consequence:* `Player` still carries a `playerId` distinct from its
+   `socketId`. They hold the same value and `attachToSocket()` is unused under
+   this decision; both stay because they are what would let this question be
+   reopened without `playerId` changing mid-round, which would otherwise break
+   every client keying opponent state by it.
+3. **`roomState` is sent in full on every update.** `Game.getRoomPublicState()`
+   rebuilds the whole state on each call — status, host id, and the full player
+   list — and never caches it.
+   *Rationale:* a room holds a handful of players, so the payload is small, and
+   a client that receives the whole state cannot drift out of sync whichever
+   broadcast it missed. A delta would trade that guarantee for bytes nobody is
+   short of.
 
 ---
 
@@ -341,14 +359,14 @@ Last updated: 2026-08-07 (backend session).
 | Module | Status | Notes |
 |---|---|---|
 | Repository scaffolding (workspaces, tsconfig, ESLint, Vitest, Vite) | done | `shared/tsconfig.json` had `"files": []` and compiled nothing; fixed to `"include": ["src"]` |
-| `shared/protocol/*` | blocked | Waiting on §7 ratification (Q2, Q3). A started `socket_typed_interfaces.ts` is parked in `_pending_protocol/` |
+| `shared/protocol/*` | not started | **Unblocked** — §7 ratified 2026-08-07. Four files to write as one joint commit; a started `socket_typed_interfaces.ts` is parked in `_pending_protocol/` |
 | `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (untested) · `piece_sequence_generator` ❌ |
 | `shared/domain_types/*` | in progress | `spectrum_column_heights` ✅ (100%) · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ❌ |
 | `shared/utils/seeded_random_number_generator` | not started | |
 | `server/config` + `server/http` | done | 100% coverage, 16 tests |
 | `server/domain/piece` · `player` · `game` | in progress | `piece` ✅ (untested) · `player` ✅ (100%) · `game` partial — missing round seed, penalty distribution, elimination, winner resolution, restart |
 | `server/domain/game_room_registry` · `host_succession_resolver` | done | `host_succession_resolver` 95% (C12 closed) · `game_room_registry` complete but untested |
-| `server/socket/*` | in progress | `socket_server_bootstrap` ✅ · `connection_lifecycle_handler` partial (reconnect pending Q2) · `room_membership_event_handler` blocked, does not compile · `game_lifecycle` empty · `player_progress` and `room_state_broadcaster` ❌ |
+| `server/socket/*` | in progress | `socket_server_bootstrap` ✅ (still untyped, swap in the typed interfaces once the protocol lands) · `connection_lifecycle_handler` ✅ for its scope — Q2 makes immediate seat release final · `room_membership_event_handler` parked in `_pending_protocol/` · `game_lifecycle`, `player_progress`, `room_state_broadcaster` ❌. Whole directory at 0% coverage until the integration suite exists |
 | `server/errors/*` | done | Deviates from §4: one `management_errors.ts` instead of three files, different class names, no `room_not_found` equivalent. Reconcile or amend §4 |
 | `client/game_engine/*` | not started | |
 | `client/state/*` | not started | |

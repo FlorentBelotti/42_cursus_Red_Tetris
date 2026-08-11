@@ -17,27 +17,33 @@ between sessions and between the two of you.
 
 ## Where things stand — 2026-08-07
 
-**Backend:** `config/`, `http/`, `Player`, `Piece`, `GameRoomRegistry` and
-`HostSuccessionResolver` are done. **C12 (host succession) is fully closed and
-tested.** `Game` is the last partial domain class. C7 is **met on the server**
-(78.65 / 78.65 / 96.31 / 86.00), on 58 passing tests.
+**Backend: the domain layer is finished.** `config/`, `http/`, `Piece`,
+`Player`, `Game`, `GameRoomRegistry`, `HostSuccessionResolver` and the errors
+are all done and tested. Every graded rule the domain owns is implemented:
+**C9, C10, C11, C12, C13, C14.**
 
-**Two things are blocking, and they are different in kind:**
+```
+typecheck  ✓ 0 errors        build  ✓ succeeds
+test       ✓ 121 passing     coverage  95.85 / 95.85 / 98.69 / 97.18  ✓ C7
+```
 
-1. **Phase 0 is the critical path and needs both of you.** Q2 and Q3 of §7 are
-   still open, and all four remaining socket modules import
-   `shared/src/protocol/`. This has lead time — settle it first.
-2. **`room_membership_event_handler.ts` does not compile**, so the server
-   typecheck and build both fail today. Park it until Phase 0 lands and the
-   gate goes green.
+**§7 is ratified** (2026-08-07): fire-and-forget on progress events, a
+reconnecting socket is a new player, `roomState` sent in full. Nothing in the
+protocol is open any more.
 
-**Unblocked backend work, needing nobody:** finish `Game` (round seed, penalty
-distribution, elimination, winner, restart, duplicate-name rejection), then
-`game_room_registry_test.ts` and `piece_test.ts`.
+**The critical path is now Phase 0 itself.** Writing
+`shared/src/protocol/` is the joint commit that unblocks all four remaining
+socket modules — roughly three quarters of the backend work still to do.
+
+**Unblocked backend work, needing nobody:** commit the work (most of it is
+still untracked), reconcile `errors/` with §4, add the missing JSDoc (§9).
 
 **Awaiting Florent's review:** `player_public_state.ts` and
 `room_public_state.ts` were written by the backend owner in the co-owned
 `shared/` workspace (§5).
+
+**Parked in `_pending_protocol/`, to restore once the protocol exists:**
+`room_membership_event_handler.ts` and a started `socket_typed_interfaces.ts`.
 
 ---
 
@@ -46,16 +52,18 @@ distribution, elimination, winner, restart, duplicate-name rejection), then
 Do this together before splitting off into `server/` and `client/`. Everything
 downstream imports from here, so divergence here desynchronises the whole app.
 
-- [ ] **Ratify the socket protocol** in `CLAUDE.md` §7 and remove the "pending
-      ratification" warning. Progress on the three open questions:
-      - [x] Q1 — ack vs. fire-and-forget on `player:lines_cleared`:
-            **settled, fire-and-forget**, extended to `player:spectrum_update`
-            and `player:game_over_report`. Rationale recorded in §7.
-      - [ ] Q2 — reconnect semantics. Blocks the `disconnect` path in
-            `connection_lifecycle_handler`, which today frees the seat at once.
-      - [ ] Q3 — full vs. delta `roomState`. `Game.getRoomPublicState()` is
-            already built as **full** per §7's own recommendation; needs
-            Florent's sign-off. A delta would change only the broadcaster.
+- [x] **Ratify the socket protocol** in `CLAUDE.md` §7 — **done 2026-08-07**,
+      warning removed. The three decisions, with rationale, are recorded in §7:
+      - [x] Q1 — **fire-and-forget**, for all three client-to-server progress
+            events. No acknowledgement callback anywhere in
+            `ClientToServerEvents`.
+      - [x] Q2 — **a reconnecting socket is a new player.** The seat is freed at
+            once on `disconnect`, which is what `connection_lifecycle_handler`
+            already does, so that code is now final rather than provisional. A
+            returning client sends a fresh `room:join_request` and is refused
+            mid-round like any other latecomer (C13).
+      - [x] Q3 — **`roomState` in full on every update.**
+            `Game.getRoomPublicState()` already implements this.
 - [ ] `shared/src/protocol/socket_event_names.ts` — frozen constant object of
       event names.
 - [ ] `shared/src/protocol/client_to_server_payloads.ts` and
