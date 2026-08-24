@@ -10,12 +10,15 @@ import { bootstrapSocketServer } from './socket/socket_server_bootstrap';
 
 /**
  * Builds the HTTP server that serves the client SPA, with a socket.io server
- * attached to it. Socket event handlers are registered by server/src/socket
- * once the protocol is implemented.
+ * attached to it and every event handler wired up.
+ *
+ * Exported so the integration suite can start the real composition root on an
+ * ephemeral port, rather than assembling its own approximation of it and
+ * testing something the production entry point never runs.
  *
  * @returns An HTTP server that is not listening yet.
  */
-function createRedTetrisHttpServer(): HttpServer {
+export function createRedTetrisHttpServer(): HttpServer {
   const application = createStaticAssetHttpApplication(resolveClientBuildDirectoryPath());
   const httpServer = createServer(application);
 
