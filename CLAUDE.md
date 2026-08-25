@@ -354,37 +354,44 @@ amendment to this section, not a judgement call at the call site.
 
 Legend: `not started` · `in progress` · `done` · `blocked`
 
-Last updated: 2026-08-07 (backend session).
+Last updated: 2026-08-25 (re-analysis of `hmarconn/server_side`).
 
 | Module | Status | Notes |
 |---|---|---|
-| Repository scaffolding (workspaces, tsconfig, ESLint, Vitest, Vite) | done | `shared/tsconfig.json` had `"files": []` and compiled nothing; fixed to `"include": ["src"]` |
-| `shared/protocol/*` | not started | **Unblocked** — §7 ratified 2026-08-07. Four files to write as one joint commit; a started `socket_typed_interfaces.ts` is parked in `_pending_protocol/` |
-| `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (untested) · `piece_sequence_generator` ❌ |
-| `shared/domain_types/*` | in progress | `spectrum_column_heights` ✅ (100%) · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ❌ |
-| `shared/utils/seeded_random_number_generator` | not started | |
-| `server/config` + `server/http` | done | 100% coverage, 16 tests |
-| `server/domain/piece` · `player` · `game` | in progress | `piece` ✅ (untested) · `player` ✅ (100%) · `game` partial — missing round seed, penalty distribution, elimination, winner resolution, restart |
-| `server/domain/game_room_registry` · `host_succession_resolver` | done | `host_succession_resolver` 95% (C12 closed) · `game_room_registry` complete but untested |
-| `server/socket/*` | in progress | `socket_server_bootstrap` ✅ (still untyped, swap in the typed interfaces once the protocol lands) · `connection_lifecycle_handler` ✅ for its scope — Q2 makes immediate seat release final · `room_membership_event_handler` parked in `_pending_protocol/` · `game_lifecycle`, `player_progress`, `room_state_broadcaster` ❌. Whole directory at 0% coverage until the integration suite exists |
-| `server/errors/*` | done | Deviates from §4: one `management_errors.ts` instead of three files, different class names, no `room_not_found` equivalent. Reconcile or amend §4 |
+| Repository scaffolding (workspaces, tsconfig, ESLint, Vitest, Vite) | done | |
+| `shared/protocol/*` | done | All four files written and ratified (§7). `shared/src/index.ts` barrel now exists; both workspaces import from `'shared'`, no deep paths left. |
+| `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (tested, 156-line suite) · `piece_sequence_generator` ❌ — **not started, the one real gap blocking any actual piece play** |
+| `shared/domain_types/*` | in progress | `spectrum_column_heights` ✅ tested · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ❌ not started |
+| `shared/utils/seeded_random_number_generator` | not started | Needed by `piece_sequence_generator` above |
+| `server/config` + `server/http` | done | Tested (`server_configuration_loader_test`, `static_asset_http_server_test`, `single_page_application_fallback_route_test`) |
+| `server/domain/piece` · `player` · `game` | done | All three implemented and tested. `Game` now covers round seed, penalty computation, elimination, winner resolution and restart |
+| `server/domain/game_room_registry` · `host_succession_resolver` | done | Both implemented and tested (`game_room_registry_test.ts` now exists) |
+| `server/socket/*` | done | All five handler modules implemented against the typed protocol (`typed_socket_aliases.ts`), each with its own test file, plus a real end-to-end `socket_integration_test.ts` (413 lines) with test doubles/harness |
+| `server/errors/*` | done | Still deviates from §4: one `management_errors.ts` instead of three files, different class names, no `room_not_found` equivalent. Not reconciled — treat §4's error file list as superseded by this module until amended |
 | `client/game_engine/*` | not started | |
 | `client/state/*` | not started | |
 | `client/network/*` | not started | |
 | `client/hooks/*` | not started | |
 | `client/components/*` | not started | |
-| Server tests (domain + socket integration) | in progress | 58 passing. `game_room_registry` and `piece` untested; socket integration suite not started |
+| Server tests (domain + socket integration) | done | 13 server test files + 2 shared test files, including a real socket.io-client integration suite |
 | Client tests (engine + components) | not started | |
-| Coverage thresholds met (C7) | in progress | **server ✅ 78.65 stmts / 78.65 lines / 96.31 branch / 86.00 funcs** · shared ✗ 50.88 stmts (`tetromino_shape_definitions` at 0%) · client n/a |
+| Coverage thresholds met (C7) | unverified | Last measured 2026-08-07 at server ~78.65 stmts/lines, 96.31 branch, 86.00 funcs; shared ~50.88 stmts. Substantial server/shared work has landed since (see rows above) — **re-run `npm run test:coverage` to get current numbers**; this session could not (host disk was at 100% capacity, `npm install` failed with `ENOSPC`) |
 
 **Known blockers**
 
-1. `server/src/socket/room_membership_event_handler.ts` does not compile, so
-   `npm run typecheck -w server` and `npm run build -w server` both fail. Ten
-   errors, every one of them waiting on `shared/src/protocol/`.
-2. `shared/package.json` advertises `main: dist/index.js` but no
-   `shared/src/index.ts` exists, so both workspaces import deep paths
-   (`shared/src/...`).
+1. `shared/game_rules/piece_sequence_generator.ts` and
+   `shared/utils/seeded_random_number_generator.ts` do not exist yet. Nothing
+   on either side can deal a piece until they do — this is the critical path
+   for starting client work.
+2. `shared/domain_types/board_cell_value.ts` does not exist yet (needed once
+   the client board matrix is built).
+3. The two compile/blocker items from the previous entry (protocol not
+   compiling, missing `shared/src/index.ts`) are resolved — both now exist
+   and the protocol is ratified. Not re-verified with a live `typecheck` run
+   this session (see coverage row above); worth confirming once disk space
+   is available.
+4. `client/` is still just scaffolding — no engine, state, network, hooks or
+   components exist. Full backlog is unchanged from §4/§6/§7 of this file.
 
 **Update this table at the end of every session.** It is the handover between
 sessions and between the two developers.
