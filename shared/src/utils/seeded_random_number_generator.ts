@@ -4,9 +4,9 @@
  * whenever it is started with the same seed number.
  *
  * `Math.random()` cannot be used for this project's piece sequence, because
- * `Math.random()` gives a different answer every time the program runs.
- * CLAUDE.md rule C10 requires that every player in the same room sees the
- * exact same pieces, in the exact same order. The server only sends one
+ * `Math.random()` gives a different answer every time the program runs, and
+ * every player in the same room must see the exact same pieces, in the
+ * exact same order. The server only sends one
  * small number - the "seed" - and every player's browser builds the same
  * piece sequence from that one number, locally, using the generator below.
  * That only works if the generator is deterministic (same seed in, same

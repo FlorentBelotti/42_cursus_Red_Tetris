@@ -13,9 +13,9 @@
  * this file's generator the same number of times, with the same seed,
  * always produces the exact same list of pieces - on the server, and on
  * every player's browser. That is what lets the server broadcast a single
- * seed number instead of every individual piece (see CLAUDE.md C10 and
- * decision D2). This file must never be reimplemented or copied elsewhere:
- * any second copy could drift out of sync and desynchronise a room.
+ * seed number instead of every individual piece. This file must never be
+ * reimplemented or copied elsewhere: any second copy could drift out of
+ * sync and desynchronise a room.
  */
 
 import {
