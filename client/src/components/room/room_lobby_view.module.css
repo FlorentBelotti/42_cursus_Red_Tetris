@@ -1,0 +1,18 @@
+.lobby {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.6vmin;
+}
+
+.label {
+  font-size: var(--rt-fs-label);
+  color: var(--rt-red-2);
+  letter-spacing: var(--rt-ls-label);
+}
+
+.panelWidth {
+  width: min(720px, 92%);
+}

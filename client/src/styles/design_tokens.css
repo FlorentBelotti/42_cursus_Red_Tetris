@@ -1,0 +1,93 @@
+/**
+ * Red Tetris — design tokens.
+ * The one and only place visual values may be defined. No hex literal, no raw
+ * px font size, no magic spacing value anywhere else in the client — every
+ * component reads these custom properties instead.
+ * Ported from design_handoff_red_tetris/tokens.css (art direction handoff).
+ */
+
+:root {
+  /* ---- Colours: pure black + four intensities of red + one warm white ---- */
+  --rt-bg: #000000; /* page background, pure black */
+  --rt-cell-empty: #0a0000; /* empty board cell background */
+  --rt-board-bg: #050000; /* board inner background */
+  --rt-red-1: #3b0000; /* grid, inactive, penalty lines, inner borders */
+  --rt-red-2: #7a0000; /* muted text, labels, frame borders, key legend */
+  --rt-red-3: #c80000; /* primary text, locked pieces, board border */
+  --rt-red-4: #ff1a1a; /* accent: focus, prompts, active piece, glow */
+  --rt-white-hot: #ffe8e8; /* block cursor and scanline peak ONLY */
+
+  /* ---- Derived colours (effects) ---- */
+  --rt-scanline: rgba(255, 26, 26, 0.11);
+  --rt-flicker: rgba(255, 26, 26, 0.022);
+  --rt-field-active: rgba(200, 0, 0, 0.16);
+  --rt-overlay: rgba(0, 0, 0, 0.88);
+  --rt-glow-board: rgba(200, 0, 0, 0.35);
+  --rt-glow-title: rgba(255, 26, 26, 0.7);
+
+  /* ---- Typography ---- */
+  --rt-font-mono: 'VT323', ui-monospace, 'IBM Plex Mono', monospace;
+  --rt-font-pixel: 'Press Start 2P', var(--rt-font-mono);
+
+  --rt-fs-title: 44px; /* RED TETRIS logo */
+  --rt-fs-over: 46px; /* GAME OVER / WINNER */
+  --rt-fs-prompt: 26px; /* > PRESS [ENTER] ... */
+  --rt-fs-intro: 28px; /* home terminal intro block title */
+  --rt-fs-field: 30px; /* join-rejected code display */
+  --rt-fs-overlay: 24px; /* round-over overlay subtitle and prompts */
+  --rt-fs-body: 22px; /* tables, running text */
+  --rt-fs-shell: 19px; /* top bar, stats */
+  --rt-fs-label: 18px; /* panel label */
+  --rt-fs-legend: 17px; /* key legend */
+
+  --rt-ls-tight: 0.04em;
+  --rt-ls-body: 0.06em;
+  --rt-ls-shell: 0.09em;
+  --rt-ls-label: 0.18em;
+
+  /* ---- Spacing (base 8, no fractional rhythm) ---- */
+  --rt-sp-1: 4px;
+  --rt-sp-2: 6px;
+  --rt-sp-3: 8px;
+  --rt-sp-4: 11px;
+  --rt-sp-5: 13px;
+  --rt-sp-6: 16px;
+  --rt-sp-7: 19px;
+  --rt-sp-8: 21px;
+  --rt-sp-9: 24px;
+  --rt-sp-10: 26px;
+
+  /* ---- Borders & shadows ---- */
+  --rt-radius: 0; /* everything snaps to the character grid */
+  --rt-radius-bezel: 26px; /* SOLE exception: the screen bezel */
+  --rt-border-frame: 2px solid var(--rt-red-2);
+  --rt-border-inner: 1px solid var(--rt-red-1);
+  --rt-border-active: 2px solid var(--rt-red-3);
+
+  --rt-glow-text: 0 0 6px rgba(200, 0, 0, 0.55);
+  --rt-aberration:
+    0 0 6px rgba(200, 0, 0, 0.55),
+    1px 0 0 rgba(255, 26, 26, 0.28),
+    -1px 0 0 rgba(122, 0, 0, 0.5);
+  --rt-shadow-bezel:
+    inset 0 0 140px 40px rgba(0, 0, 0, 0.95),
+    inset 0 0 24px 4px rgba(122, 0, 0, 0.35);
+  --rt-shadow-board: 0 0 24px var(--rt-glow-board);
+
+  /* ---- Game geometry ---- */
+  /* --rt-board-cols/--rt-board-rows must stay in sync with
+     shared/src/game_rules/board_dimension_constants.ts (C9) — CSS cannot
+     import a TypeScript constant, so this is the CSS-side mirror. */
+  --rt-board-cols: 10;
+  --rt-board-rows: 20;
+  --rt-board-size: 300px; /* board width; cell = (300 - 9px of gap) / 10 */
+  --rt-cell-gap: 1px;
+  --rt-spectrum-h: 104px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--rt-bg);
+}

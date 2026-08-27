@@ -1,0 +1,111 @@
+@keyframes flicker {
+  0% {
+    opacity: 0.94;
+  }
+  20% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.99;
+  }
+  100% {
+    opacity: 0.93;
+  }
+}
+
+.viewport {
+  position: fixed;
+  inset: 0;
+  background: var(--rt-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vmin;
+  box-sizing: border-box;
+}
+
+.bezel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1600px;
+  border-radius: var(--rt-radius-bezel);
+  overflow: hidden;
+  box-shadow: var(--rt-shadow-bezel);
+  padding: 3.2vmin;
+  box-sizing: border-box;
+  text-shadow: var(--rt-aberration);
+  font-family: var(--rt-font-mono);
+  color: var(--rt-red-3);
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1.4vmin;
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2ch;
+  white-space: nowrap;
+  overflow: hidden;
+  border-bottom: var(--rt-border-frame);
+  padding-bottom: var(--rt-sp-2);
+  font-size: var(--rt-fs-shell);
+  letter-spacing: var(--rt-ls-shell);
+}
+
+.headerValue {
+  color: var(--rt-red-4);
+}
+
+.headerSocket {
+  color: var(--rt-red-2);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.crtLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--rt-scanline) 0px,
+    var(--rt-scanline) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.vignette {
+  background: radial-gradient(ellipse at 50% 50%, transparent 42%, rgba(0, 0, 0, 0.72) 88%, rgba(0, 0, 0, 0.96) 100%);
+}
+
+.flicker {
+  background: var(--rt-flicker);
+  animation: flicker 0.14s steps(2, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flicker {
+    animation: none;
+  }
+}

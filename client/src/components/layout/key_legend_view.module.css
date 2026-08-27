@@ -1,0 +1,17 @@
+.legend {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2ch;
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: var(--rt-border-frame);
+  padding-top: var(--rt-sp-2);
+  font-size: var(--rt-fs-legend);
+  letter-spacing: var(--rt-ls-tight);
+  color: var(--rt-red-2);
+}
+
+.key {
+  color: var(--rt-red-3);
+}

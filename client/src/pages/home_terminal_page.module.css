@@ -1,0 +1,9 @@
+.terminal {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rt-sp-7);
+  padding-top: var(--rt-sp-3);
+}

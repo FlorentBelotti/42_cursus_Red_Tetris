@@ -1,0 +1,20 @@
+.wrapper {
+  width: min(720px, 92%);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rt-sp-5);
+}
+
+.code {
+  font-size: var(--rt-fs-field);
+  color: var(--rt-red-4);
+  letter-spacing: var(--rt-ls-tight);
+}
+
+.explanation {
+  font-size: var(--rt-fs-body);
+  color: var(--rt-red-3);
+}

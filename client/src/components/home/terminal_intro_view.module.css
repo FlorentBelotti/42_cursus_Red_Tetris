@@ -1,0 +1,29 @@
+.wrapper {
+  flex-shrink: 0;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rt-sp-3);
+}
+
+.title {
+  font-family: var(--rt-font-pixel);
+  font-size: var(--rt-fs-intro);
+  color: var(--rt-red-4);
+  letter-spacing: var(--rt-ls-tight);
+}
+
+.line {
+  font-size: var(--rt-fs-body);
+  color: var(--rt-red-3);
+}
+
+.lineDim {
+  color: var(--rt-red-2);
+}
+
+.key {
+  color: var(--rt-red-4);
+}

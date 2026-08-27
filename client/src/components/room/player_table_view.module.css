@@ -1,0 +1,19 @@
+.table {
+  display: grid;
+  grid-template-columns: 4ch 1fr 10ch;
+  gap: var(--rt-sp-3) 1ch;
+  font-size: var(--rt-fs-body);
+  letter-spacing: var(--rt-ls-body);
+}
+
+.headCell {
+  color: var(--rt-red-2);
+}
+
+.cell {
+  color: var(--rt-red-3);
+}
+
+.cellHost {
+  color: var(--rt-red-4);
+}

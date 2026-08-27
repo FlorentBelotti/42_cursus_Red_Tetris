@@ -1,0 +1,49 @@
+.log {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--rt-sp-1);
+}
+
+.echo {
+  display: flex;
+  gap: 1ch;
+  font-size: var(--rt-fs-body);
+}
+
+.shellPrompt {
+  color: var(--rt-red-2);
+}
+
+.echoCommand {
+  color: var(--rt-red-3);
+}
+
+.output {
+  font-size: var(--rt-fs-body);
+  color: var(--rt-red-2);
+}
+
+.outputError {
+  color: var(--rt-red-4);
+}
+
+.table {
+  display: grid;
+  grid-template-columns: 28ch 1fr;
+  gap: var(--rt-sp-1) 1ch;
+  font-size: var(--rt-fs-body);
+  margin-top: var(--rt-sp-2);
+  margin-bottom: var(--rt-sp-4);
+}
+
+.tableCommand {
+  color: var(--rt-red-3);
+}
+
+.tableDescription {
+  color: var(--rt-red-2);
+}

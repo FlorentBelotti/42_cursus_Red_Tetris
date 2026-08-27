@@ -1,0 +1,21 @@
+.frame {
+  align-self: start;
+  max-height: 100%;
+  box-sizing: border-box;
+  border: var(--rt-border-active);
+  padding: 3px;
+  box-shadow: var(--rt-shadow-board);
+}
+
+.inner {
+  border: 1px solid var(--rt-red-2);
+  padding: 4px;
+  background: var(--rt-board-bg);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--rt-board-cols), 1fr);
+  gap: var(--rt-cell-gap);
+  width: var(--rt-board-size);
+}

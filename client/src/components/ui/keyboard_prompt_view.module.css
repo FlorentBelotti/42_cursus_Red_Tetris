@@ -1,0 +1,12 @@
+.prompt {
+  font-size: var(--rt-fs-prompt);
+  color: var(--rt-red-4);
+}
+
+.promptDisabled {
+  color: var(--rt-red-2);
+}
+
+.promptMuted {
+  color: var(--rt-red-2);
+}

@@ -1,0 +1,15 @@
+.input {
+  flex-shrink: 0;
+  display: flex;
+  gap: 1ch;
+  align-items: baseline;
+  font-size: var(--rt-fs-body);
+}
+
+.shellPrompt {
+  color: var(--rt-red-2);
+}
+
+.text {
+  color: var(--rt-red-4);
+}
