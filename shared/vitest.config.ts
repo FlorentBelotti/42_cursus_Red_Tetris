@@ -10,6 +10,17 @@ export default defineConfig({
       reporter: ['text', 'html'],
       all: true,
       include: ['src/**/*.ts'],
+      // Type-only modules compile to no executable statements, so v8 reports
+      // them as 0% whatever tests exist. Counting them would hide how much
+      // real logic is actually covered.
+      exclude: [
+        'src/index.ts',
+        'src/protocol/client_to_server_payloads.ts',
+        'src/protocol/server_to_client_payloads.ts',
+        'src/protocol/socket_typed_interfaces.ts',
+        'src/domain_types/player_public_state.ts',
+        'src/domain_types/room_public_state.ts',
+      ],
       thresholds: {
         statements: 70,
         functions: 70,
