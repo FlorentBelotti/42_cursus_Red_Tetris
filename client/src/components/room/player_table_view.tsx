@@ -6,12 +6,6 @@ export type PlayerTableViewProps = {
   readonly players: readonly RoomLobbySamplePlayer[];
 };
 
-/**
- * Resolves the display role and cell class for one player row.
- *
- * @param player - The player row to describe.
- * @returns The role label and the CSS class name for its two cells.
- */
 function describePlayerRow(player: RoomLobbySamplePlayer): { role: string; cellClassName: string } {
   if (player.isHost) {
     return { role: 'HOST', cellClassName: `${styles.cell} ${styles.cellHost}` };
@@ -20,12 +14,6 @@ function describePlayerRow(player: RoomLobbySamplePlayer): { role: string; cellC
   return { role: 'PLAYER', cellClassName: styles.cell ?? '' };
 }
 
-/**
- * The Room Lobby's player list: index, name, role. A CSS grid, never a
- * `<table>` (C4).
- *
- * @param props - The players currently in the room, in join order.
- */
 export function PlayerTableView(props: PlayerTableViewProps): JSX.Element {
   return (
     <div className={styles.table}>

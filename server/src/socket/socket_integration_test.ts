@@ -146,9 +146,10 @@ describe('starting a round over a real socket', () => {
 
   it('moves the room to running', async () => {
     const { client: alice } = await connectAndJoin(testServer, 'nether', 'alice');
-    const statePromise = waitForEvent<{ roomState: { status: string } }>(
+    const statePromise = waitForEventMatching<{ roomState: { status: string } }>(
       alice,
       'room:state_updated',
+      (payload) => payload.roomState.status === 'running',
     );
 
     alice.emit('game:start_request');
@@ -376,9 +377,10 @@ describe('leaving and disconnecting over a real socket', () => {
       'nether',
       'bob',
     );
-    const stateUpdatePromise = waitForEvent<{ roomState: { hostPlayerId: string } }>(
+    const stateUpdatePromise = waitForEventMatching<{ roomState: { hostPlayerId: string } }>(
       bob,
       'room:state_updated',
+      (payload) => payload.roomState.hostPlayerId === bobAcceptance.playerId,
     );
 
     alice.disconnect();
@@ -389,9 +391,10 @@ describe('leaving and disconnecting over a real socket', () => {
   it('tells the room when a player leaves on purpose', async () => {
     const { client: alice } = await connectAndJoin(testServer, 'nether', 'alice');
     const { client: bob } = await connectAndJoin(testServer, 'nether', 'bob');
-    const stateUpdatePromise = waitForEvent<{ roomState: { players: unknown[] } }>(
+    const stateUpdatePromise = waitForEventMatching<{ roomState: { players: unknown[] } }>(
       bob,
       'room:state_updated',
+      (payload) => payload.roomState.players.length === 1,
     );
 
     alice.emit('room:leave_request');

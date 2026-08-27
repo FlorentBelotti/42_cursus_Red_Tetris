@@ -8,15 +8,6 @@ export type GameOverOverlayViewProps = {
   readonly restartPromptState: KeyboardPromptState;
 };
 
-/**
- * The Round Over overlay: drawn on top of the In-Game screen (the board
- * stays visible behind it), not a separate page. The resolved title,
- * subtitle, and restart prompt come from
- * page_access/round_over_page_access.ts — this component only renders them.
- *
- * @param props - The title ("WINNER" or "GAME OVER"), subtitle, and the
- * resolved restart prompt.
- */
 export function GameOverOverlayView(props: GameOverOverlayViewProps): JSX.Element {
   return (
     <div className={styles.overlay}>

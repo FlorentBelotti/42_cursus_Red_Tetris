@@ -7,11 +7,6 @@ export type NextPiecePreviewViewProps = {
   readonly cells: readonly BoardCellState[];
 };
 
-/**
- * The "NEXT" panel: a 4x4 preview of the upcoming piece.
- *
- * @param props - The flat 4x4 array of cell states (16 cells).
- */
 export function NextPiecePreviewView(props: NextPiecePreviewViewProps): JSX.Element {
   return (
     <div className={styles.wrapper}>

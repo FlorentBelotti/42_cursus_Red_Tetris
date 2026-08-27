@@ -5,12 +5,6 @@ export type KeyLegendViewProps = {
   readonly legend: readonly KeyLegendEntry[];
 };
 
-/**
- * The single-line key legend pinned to the bottom of every screen. Never
- * wraps, never scrolls — it changes per page (see page_access/).
- *
- * @param props - The key legend entries for the current screen.
- */
 export function KeyLegendView(props: KeyLegendViewProps): JSX.Element {
   return (
     <div className={styles.legend}>

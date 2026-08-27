@@ -32,14 +32,6 @@ import styles from './room_route_page.module.css';
 
 type RoundStatus = 'waiting' | 'running' | 'finished';
 
-/**
- * Reads the `?host=0` dev-only query parameter used to preview the
- * non-host key legend and prompts without real room membership. Defaults to
- * host, matching design_handoff_red_tetris/02 Room Lobby.dc.html.
- *
- * @param hostQueryValue - The raw "host" query parameter value, if present.
- * @returns Whether the local player should be treated as host.
- */
 function resolveIsHostFromQueryParameter(hostQueryValue: string | null): boolean {
   if (hostQueryValue === '0') {
     return false;
@@ -48,11 +40,6 @@ function resolveIsHostFromQueryParameter(hostQueryValue: string | null): boolean
   return true;
 }
 
-/**
- * The room route (`/:room/:playerName`). Owns the waiting/running/finished
- * state machine described in PROMPT.md — three of the five screens are
- * states here, not separate URLs.
- */
 export function RoomRoutePage(): JSX.Element {
   const { room, playerName } = useRoomUrlParameters();
   const navigate = useNavigate();

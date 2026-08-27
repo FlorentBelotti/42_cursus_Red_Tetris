@@ -5,21 +5,10 @@ const LOWEST_ASSIGNABLE_PORT_NUMBER = 1;
 const HIGHEST_ASSIGNABLE_PORT_NUMBER = 65535;
 const DECIMAL_PARSING_RADIX = 10;
 
-/**
- * Every setting the server derives from its environment.
- */
 export interface ServerConfiguration {
-  /** TCP port the HTTP server (and the socket.io server attached to it) listens on. */
   httpServerPort: number;
 }
 
-/**
- * Tells whether a number can be used as a TCP port, meaning a whole number
- * inside the assignable port range.
- *
- * @param candidatePortNumber - The number to validate.
- * @returns True when the number is a usable TCP port, false otherwise.
- */
 function isAssignablePortNumber(candidatePortNumber: number): boolean {
   if (Number.isInteger(candidatePortNumber) === false) {
     return false;
@@ -36,16 +25,6 @@ function isAssignablePortNumber(candidatePortNumber: number): boolean {
   return true;
 }
 
-/**
- * Reads the HTTP port from an environment map, falling back to the default
- * port when `PORT` is not set. A `PORT` that is set but unusable is treated as
- * a configuration mistake rather than silently ignored, because a server
- * quietly listening on an unexpected port is hard to diagnose.
- *
- * @param environment - The environment variables to read from.
- * @returns The validated port number the server should listen on.
- * @throws Error when `PORT` is present but is not an assignable port number.
- */
 function readHttpServerPortFromEnvironment(environment: NodeJS.ProcessEnv): number {
   const rawPortValue = environment.PORT;
 
@@ -65,14 +44,6 @@ function readHttpServerPortFromEnvironment(environment: NodeJS.ProcessEnv): numb
   return parsedPortNumber;
 }
 
-/**
- * Builds the server configuration from an explicit environment map. Reads no
- * global state, which is what makes the validation rules directly testable.
- *
- * @param environment - The environment variables to read from.
- * @returns The validated server configuration.
- * @throws Error when one of the environment values is present but invalid.
- */
 export function buildServerConfigurationFromEnvironment(
   environment: NodeJS.ProcessEnv,
 ): ServerConfiguration {
@@ -81,14 +52,6 @@ export function buildServerConfigurationFromEnvironment(
   };
 }
 
-/**
- * Loads the `.env` file into `process.env`, then builds the server
- * configuration from it. This is the composition root's single configuration
- * call; every other module receives the returned object instead.
- *
- * @returns The validated server configuration.
- * @throws Error when one of the environment values is present but invalid.
- */
 export function loadServerConfiguration(): ServerConfiguration {
   dotenv.config();
 

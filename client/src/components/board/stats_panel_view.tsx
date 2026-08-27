@@ -8,12 +8,6 @@ export type StatsPanelViewProps = {
 
 const STAT_DISPLAY_DIGIT_COUNT = 3;
 
-/**
- * The LINES / SENT counters. There is no scoring system in the subject —
- * these are the only two numbers tracked.
- *
- * @param props - The lines-cleared and penalty-lines-sent counts.
- */
 export function StatsPanelView(props: StatsPanelViewProps): JSX.Element {
   const linesDisplay = String(props.linesClearedCount).padStart(STAT_DISPLAY_DIGIT_COUNT, '0');
   const sentDisplay = String(props.penaltyLinesSentCount).padStart(STAT_DISPLAY_DIGIT_COUNT, '0');

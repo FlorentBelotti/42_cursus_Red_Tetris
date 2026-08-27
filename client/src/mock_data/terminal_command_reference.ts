@@ -1,7 +1,3 @@
-/**
- * The terminal's recognised commands and their descriptions, as printed by
- * the HELP command (design_handoff_red_tetris/01b Home Help.dc.html).
- */
 export type TerminalCommandName = 'JOIN' | 'START' | 'LEAVE' | 'KEYS' | 'CLEAR' | 'HELP';
 
 export type TerminalCommandReferenceEntry = {

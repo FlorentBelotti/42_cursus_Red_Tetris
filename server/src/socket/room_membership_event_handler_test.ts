@@ -16,11 +16,6 @@ interface RecordedMessage {
   payload: unknown;
 }
 
-/**
- * A stand-in for one connected socket. It records what was emitted straight to
- * it, which rooms it joined and left, and lets a test fire an incoming event by
- * name the way a real client would.
- */
 function createFakeSocket(socketId: string) {
   const emittedToThisSocket: RecordedMessage[] = [];
   const broadcastToOthers: RecordedMessage[] = [];
@@ -71,7 +66,6 @@ function createFakeSocket(socketId: string) {
   };
 }
 
-/** A stand-in for the socket.io server that records room broadcasts. */
 function createFakeServer() {
   const roomBroadcasts: RecordedMessage[] = [];
 
@@ -88,9 +82,6 @@ function createFakeServer() {
   return { roomBroadcasts, asTypedServer: fakeServer as unknown as TypedSocketIoServer };
 }
 
-/**
- * Wires the handler under test to a fresh fake socket, server and registry.
- */
 function setUpJoinableRoom(socketId = 'socket-alice') {
   const fakeSocket = createFakeSocket(socketId);
   const fakeServer = createFakeServer();

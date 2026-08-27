@@ -16,12 +16,6 @@ export type RoundOverOverlayContent = {
   readonly restartPrompt: RoundOverPrompt;
 };
 
-/**
- * The key legend for the Round Over screen, which differs for the host.
- *
- * @param isHost - Whether the local player is the room's host.
- * @returns The key legend entries to render.
- */
 export function resolveRoundOverKeyLegend(isHost: boolean): readonly KeyLegendEntry[] {
   if (isHost) {
     return ROUND_OVER_HOST_KEY_LEGEND;
@@ -30,14 +24,6 @@ export function resolveRoundOverKeyLegend(isHost: boolean): readonly KeyLegendEn
   return ROUND_OVER_GUEST_KEY_LEGEND;
 }
 
-/**
- * Builds the Round Over overlay's title, subtitle, and restart prompt.
- *
- * @param isHost - Whether the local player is the room's host.
- * @param localPlayerName - The local player's name.
- * @param winnerName - The winning player's name, or null for a solo top-out.
- * @returns The overlay copy to render.
- */
 export function resolveRoundOverOverlayContent(
   isHost: boolean,
   localPlayerName: string,
@@ -61,23 +47,10 @@ export function resolveRoundOverOverlayContent(
   return { title, subtitle, restartPrompt };
 }
 
-/**
- * Whether a keydown event should restart the round. Host only (C12).
- *
- * @param event - The keyboard event to inspect.
- * @param isHost - Whether the local player is the room's host.
- * @returns True when a new round should start.
- */
 export function isRoundOverRestartKey(event: KeyboardEvent, isHost: boolean): boolean {
   return isHost && event.key === 'Enter';
 }
 
-/**
- * Whether a keydown event should return to the Room Lobby.
- *
- * @param event - The keyboard event to inspect.
- * @returns True when the player should go back to the lobby.
- */
 export function isRoundOverBackToLobbyKey(event: KeyboardEvent): boolean {
   return event.key === 'Escape';
 }

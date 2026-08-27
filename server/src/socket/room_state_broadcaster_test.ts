@@ -16,11 +16,6 @@ interface RecordedBroadcast {
   payload: unknown;
 }
 
-/**
- * A stand-in for socket.io that records what would have been broadcast instead
- * of sending it. Both the server and a single socket expose the same
- * `to(room).emit(event, payload)` shape, so one recorder covers both.
- */
 function createBroadcastRecorder() {
   const recordedBroadcasts: RecordedBroadcast[] = [];
 

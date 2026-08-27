@@ -5,13 +5,6 @@ export type RoomUrlParameters = {
   readonly playerName: string;
 };
 
-/**
- * Reads the room name and player name from the current URL
- * (`/:room/:playerName`, C6). Throws if mounted outside that route, since
- * that would be a routing bug, not a runtime condition to recover from.
- *
- * @returns The room name and player name from the URL.
- */
 export function useRoomUrlParameters(): RoomUrlParameters {
   const params = useParams<{ room: string; playerName: string }>();
 

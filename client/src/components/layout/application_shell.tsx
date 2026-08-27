@@ -13,15 +13,6 @@ export type ApplicationShellProps = {
   readonly children: ReactNode;
 };
 
-/**
- * The persistent CRT/BIOS chrome wrapping every screen: header (room,
- * player, socket status), the screen's own content, the key legend, and the
- * non-interactive CRT overlay layers (scanlines, vignette, flicker) —
- * applied here once, never repeated per page.
- *
- * @param props - room name, player name, socket status, key legend, and the
- * screen content to render inside the shell's body.
- */
 export function ApplicationShell(props: ApplicationShellProps): JSX.Element {
   return (
     <div className={styles.viewport}>

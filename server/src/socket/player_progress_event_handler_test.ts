@@ -18,10 +18,6 @@ import {
 
 const A_VALID_SPECTRUM = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1];
 
-/**
- * Sets up a room where alice reports her progress, alongside the opponents
- * named, with the round already running unless asked otherwise.
- */
 function setUpRunningRound(opponentNames: string[] = ['bob'], startTheRound = true) {
   const fakeSocket = createFakeSocket('socket-alice');
   const fakeServer = createFakeServer();

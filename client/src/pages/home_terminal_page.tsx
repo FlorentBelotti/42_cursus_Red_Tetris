@@ -15,14 +15,6 @@ import styles from './home_terminal_page.module.css';
 
 const TERMINAL_INPUT_CHARACTER_PATTERN = /^[a-z0-9_ -]$/i;
 
-/**
- * Appends new entries to the terminal log, keeping only the last
- * TERMINAL_LOG_LINE_CAP entries (the log never scrolls).
- *
- * @param currentEntries - The log's current entries.
- * @param newEntries - The entries to append.
- * @returns The capped, updated log.
- */
 function appendToLog(
   currentEntries: readonly TerminalLogEntry[],
   newEntries: readonly TerminalLogEntry[],
@@ -30,11 +22,6 @@ function appendToLog(
   return currentEntries.concat(newEntries).slice(-TERMINAL_LOG_LINE_CAP);
 }
 
-/**
- * The Home terminal screen (`/`). Owns the session log, the input buffer,
- * and the command history; what a submitted command *does* is resolved by
- * page_access/home_terminal_page_access.ts, not decided here.
- */
 export function HomeTerminalPage(): JSX.Element {
   const navigate = useNavigate();
   const [log, setLog] = useState<TerminalLogEntry[]>([]);

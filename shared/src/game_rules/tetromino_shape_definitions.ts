@@ -1,14 +1,7 @@
-import { TetrominoType } from './tetromino_type_enum';
+import { TetrominoType } from './tetromino_type_enum.js';
 
-/**
- * A single occupied cell of a tetromino, expressed as [row, column] offsets
- * inside that piece's bounding box (row 0 = top, column 0 = left).
- */
 export type TetrominoCellCoordinate = readonly [row: number, column: number];
 
-/**
- * The four occupied cells of a tetromino in one rotation state.
- */
 export type TetrominoRotationState = readonly [
   TetrominoCellCoordinate,
   TetrominoCellCoordinate,
@@ -16,10 +9,6 @@ export type TetrominoRotationState = readonly [
   TetrominoCellCoordinate,
 ];
 
-/**
- * The four rotation states of a tetromino, indexed 0 to 3, in clockwise
- * order. Rotation index 0 is the spawn orientation.
- */
 export type TetrominoRotationStates = readonly [
   TetrominoRotationState,
   TetrominoRotationState,
@@ -27,11 +16,6 @@ export type TetrominoRotationStates = readonly [
   TetrominoRotationState,
 ];
 
-/**
- * Full shape description of one tetromino type: the size of the square
- * bounding box its coordinates are expressed in, and its four rotation
- * states.
- */
 export interface TetrominoShapeDefinition {
   readonly boundingBoxSize: number;
   readonly rotationStates: TetrominoRotationStates;

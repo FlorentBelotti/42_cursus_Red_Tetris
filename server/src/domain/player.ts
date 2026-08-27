@@ -1,6 +1,5 @@
 import { createEmptySpectrumColumnHeights, type SpectrumColumnHeights } from 'shared';
 
-
 export class Player {
   private host: boolean
   private alive: boolean
@@ -30,30 +29,10 @@ export class Player {
     this.alive = false
   }
 
-  /**
-   * The identity opponents know this player by. Stable for the whole time the
-   * player is seated, and the only id that belongs in a protocol payload.
-   *
-   * @returns The player's stable identifier.
-   */
   getPlayerId() {return this.playerId}
 
-  /**
-   * The connection this player is currently reachable on. Changes whenever the
-   * player reconnects, so it must not be used as an identity.
-   *
-   * @returns The player's current socket id.
-   */
   getSocketId() {return this.socketId}
 
-  /**
-   * Points this player at a new connection, keeping their identity intact.
-   *
-   * Unused while a disconnection frees the seat immediately; it exists so that
-   * reconnection can later be supported without `playerId` ever changing.
-   *
-   * @param newSocketId - The socket the player is now connected on.
-   */
   attachToSocket(newSocketId: string): void {
     this.socketId = newSocketId
   }

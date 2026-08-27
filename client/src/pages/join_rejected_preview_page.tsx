@@ -19,13 +19,6 @@ const VALID_REASON_CODES: readonly JoinRejectedReasonCode[] = [
 
 const DEFAULT_REASON_CODE: JoinRejectedReasonCode = 'game_already_started';
 
-/**
- * Resolves the "reason" query parameter into a valid reason code, falling
- * back to the default when missing or unrecognised.
- *
- * @param reasonQueryValue - The raw "reason" query parameter value.
- * @returns A valid JoinRejectedReasonCode.
- */
 function resolveReasonCodeFromQueryParameter(reasonQueryValue: string | null): JoinRejectedReasonCode {
   const matchingReasonCode = VALID_REASON_CODES.find((reasonCode) => reasonCode === reasonQueryValue);
 
@@ -36,12 +29,6 @@ function resolveReasonCodeFromQueryParameter(reasonQueryValue: string | null): J
   return DEFAULT_REASON_CODE;
 }
 
-/**
- * Dev-only preview route for the Join Rejected screen
- * (`/__preview/rejected?reason=<code>`). The real trigger — a
- * `room:join_rejected` socket event — doesn't exist yet (see PROMPT.md
- * pages §5); this route exists so the screen can be reached and inspected.
- */
 export function JoinRejectedPreviewPage(): JSX.Element {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

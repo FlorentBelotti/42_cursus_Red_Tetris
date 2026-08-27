@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { ALL_TETROMINO_TYPES, TetrominoType } from './tetromino_type_enum';
+import { ALL_TETROMINO_TYPES, TetrominoType } from './tetromino_type_enum.js';
 import {
   TETROMINO_SHAPE_DEFINITIONS,
   type TetrominoCellCoordinate,
   type TetrominoRotationState,
-} from './tetromino_shape_definitions';
+} from './tetromino_shape_definitions.js';
 
 const CELLS_PER_TETROMINO = 4;
 const ROTATION_STATES_PER_TETROMINO = 4;

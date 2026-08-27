@@ -7,13 +7,6 @@ export type TerminalLogViewProps = {
   readonly entries: readonly TerminalLogEntry[];
 };
 
-/**
- * Renders one log entry: an echoed command line, a plain or error output
- * line, or the HELP command's table.
- *
- * @param entry - The log entry to render.
- * @returns The rendered entry.
- */
 function renderLogEntry(entry: TerminalLogEntry): JSX.Element {
   if (entry.kind === 'echo') {
     return (
@@ -45,13 +38,6 @@ function renderLogEntry(entry: TerminalLogEntry): JSX.Element {
   );
 }
 
-/**
- * The Home terminal's session log: every command typed so far, echoed and
- * followed by its output. Never scrolls — the caller keeps only the last
- * TERMINAL_LOG_LINE_CAP entries in state.
- *
- * @param props - The log entries to render, oldest first.
- */
 export function TerminalLogView(props: TerminalLogViewProps): JSX.Element {
   return (
     <div className={styles.log}>

@@ -1,13 +1,3 @@
-/**
- * Every event name the two sides exchange, in one frozen object.
- *
- * Nobody writes these strings by hand anywhere else: a typo in a literal is
- * silent at compile time and shows up as an event that simply never fires,
- * which is one of the harder bugs to track down in a socket application.
- *
- * The names themselves are namespaced by area (`room:`, `game:`, `player:`)
- * so the direction and purpose of an event is readable in a log line.
- */
 export const SOCKET_EVENT_NAMES = Object.freeze({
   ROOM_JOIN_REQUEST: 'room:join_request',
   ROOM_LEAVE_REQUEST: 'room:leave_request',

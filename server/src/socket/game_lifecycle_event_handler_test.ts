@@ -20,10 +20,6 @@ import {
   findMessagesNamed,
 } from './socket_test_doubles';
 
-/**
- * Wires the handler under test to a room that already holds the given players,
- * with the socket seated as the first of them.
- */
 function setUpSeatedHost(otherPlayerNames: string[] = []) {
   const fakeSocket = createFakeSocket('socket-alice');
   const fakeServer = createFakeServer();

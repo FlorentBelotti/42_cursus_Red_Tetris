@@ -1,6 +1,3 @@
-/**
- * One entry of the bottom key legend bar: a key label and what it does.
- */
 export type KeyLegendEntry = {
   readonly key: string;
   readonly label: string;

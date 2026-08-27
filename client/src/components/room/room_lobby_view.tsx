@@ -11,11 +11,6 @@ export type RoomLobbyViewProps = {
   readonly startPromptState: KeyboardPromptState;
 };
 
-/**
- * The Room Lobby screen: the player table and the (host-only) start prompt.
- *
- * @param props - The current player list and the resolved start prompt.
- */
 export function RoomLobbyView(props: RoomLobbyViewProps): JSX.Element {
   return (
     <div className={styles.lobby}>

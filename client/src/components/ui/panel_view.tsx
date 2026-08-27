@@ -7,12 +7,6 @@ export type PanelViewProps = {
   readonly children: ReactNode;
 };
 
-/**
- * The double-bordered BIOS frame reused across every screen.
- *
- * @param props - title (optional label), variant ('default' or 'alert'),
- * and the panel's content.
- */
 export function PanelView(props: PanelViewProps): JSX.Element {
   let outerClassName = styles.panel;
   if (props.variant === 'alert') {

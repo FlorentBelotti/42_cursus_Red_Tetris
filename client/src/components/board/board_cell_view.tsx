@@ -6,12 +6,6 @@ export type BoardCellViewProps = {
   readonly state: BoardCellState;
 };
 
-/**
- * Resolves the CSS class name for a cell's visual state.
- *
- * @param state - The cell's state.
- * @returns The class name to apply, empty state included.
- */
 function resolveCellClassName(state: BoardCellState): string {
   if (state === 'filled') {
     return `${styles.cell} ${styles.filled}`;
@@ -28,13 +22,6 @@ function resolveCellClassName(state: BoardCellState): string {
   return styles.cell ?? '';
 }
 
-/**
- * One square of the board or the next-piece preview: empty, filled
- * (locked), penalty (indestructible), or active (the falling piece).
- * Memoized — up to 200 instances re-render on every tick once gravity exists.
- *
- * @param props - The cell's state.
- */
 export const BoardCellView = memo(function BoardCellView(props: BoardCellViewProps): JSX.Element {
   return <div className={resolveCellClassName(props.state)} />;
 });

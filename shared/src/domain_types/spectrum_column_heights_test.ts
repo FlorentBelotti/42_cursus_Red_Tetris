@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { BOARD_COLUMN_COUNT, BOARD_ROW_COUNT } from '../game_rules/board_dimension_constants';
+import { BOARD_COLUMN_COUNT, BOARD_ROW_COUNT } from '../game_rules/board_dimension_constants.js';
 import {
   createEmptySpectrumColumnHeights,
   isValidSpectrumColumnHeights,
-} from './spectrum_column_heights';
+} from './spectrum_column_heights.js';
 
 describe('createEmptySpectrumColumnHeights', () => {
   it('produces one entry per board column', () => {

@@ -6,12 +6,6 @@ export type TerminalInputViewProps = {
   readonly typedText: string;
 };
 
-/**
- * The Home terminal's live input line: shell prompt, typed text, and the
- * blinking block cursor glued immediately after it (no space).
- *
- * @param props - The text typed so far.
- */
 export function TerminalInputView(props: TerminalInputViewProps): JSX.Element {
   return (
     <div className={styles.input}>

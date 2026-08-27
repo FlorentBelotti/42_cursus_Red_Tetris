@@ -2,7 +2,7 @@ import {
   PlayerLinesClearedPayload,
   PlayerSpectrumUpdatePayload,
   RoomJoinRequestPayload,
-} from './client_to_server_payloads';
+} from './client_to_server_payloads.js';
 import {
   GameOpponentSpectrumUpdatedPayload,
   GamePenaltyLinesReceivedPayload,
@@ -12,9 +12,8 @@ import {
   RoomJoinAcceptedPayload,
   RoomJoinRejectedPayload,
   RoomStateUpdatedPayload,
-} from './server_to_client_payloads';
+} from './server_to_client_payloads.js';
 
-/** Events the client emits and the server listens for. */
 export interface ClientToServerEvents {
   'room:join_request': (payload: RoomJoinRequestPayload) => void;
   'room:leave_request': () => void;
@@ -24,7 +23,6 @@ export interface ClientToServerEvents {
   'player:game_over_report': () => void;
 }
 
-/** Events the server emits and the client listens for. */
 export interface ServerToClientEvents {
   'room:join_accepted': (payload: RoomJoinAcceptedPayload) => void;
   'room:join_rejected': (payload: RoomJoinRejectedPayload) => void;

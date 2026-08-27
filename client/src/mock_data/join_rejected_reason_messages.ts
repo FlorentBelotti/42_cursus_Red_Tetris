@@ -1,7 +1,3 @@
-/**
- * The three join-rejection reason codes the (future) server can send, per
- * CLAUDE.md's socket protocol proposal (room:join_rejected).
- */
 export type JoinRejectedReasonCode =
   | 'game_already_started'
   | 'player_name_already_taken'
@@ -27,12 +23,6 @@ const JOIN_REJECTED_REASON_MESSAGES: Record<JoinRejectedReasonCode, JoinRejected
   },
 };
 
-/**
- * Looks up the display code and explanation text for a join-rejection reason.
- *
- * @param reasonCode - The reason code reported by the server.
- * @returns The matching display code and explanation.
- */
 export function resolveJoinRejectedReasonMessage(
   reasonCode: JoinRejectedReasonCode,
 ): JoinRejectedReasonMessage {

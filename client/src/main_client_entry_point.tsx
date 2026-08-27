@@ -1,7 +1,3 @@
-/**
- * SPA bootstrap: mounts the React tree onto the #root element declared in
- * index.html, wrapped in the BrowserRouter that resolves C6 join URLs.
- */
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ApplicationRouter } from './application_router';

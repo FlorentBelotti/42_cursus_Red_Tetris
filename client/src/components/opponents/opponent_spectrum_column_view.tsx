@@ -9,12 +9,6 @@ export type OpponentSpectrumColumnViewProps = {
   readonly columnHeight: number;
 };
 
-/**
- * Resolves the colour tier class for a spectrum column's height.
- *
- * @param columnHeight - The column's height (0 to BOARD_ROW_COUNT - 1).
- * @returns The CSS class name for that height tier.
- */
 function resolveColumnClassName(columnHeight: number): string {
   if (columnHeight > SPECTRUM_HIGH_COLOUR_THRESHOLD) {
     return `${styles.column} ${styles.columnHigh}`;
@@ -27,12 +21,6 @@ function resolveColumnClassName(columnHeight: number): string {
   return styles.column ?? '';
 }
 
-/**
- * One bar of an opponent's spectrum: the height of a single column's
- * highest block, as a percentage of the board's height.
- *
- * @param props - The column's height (0 to BOARD_ROW_COUNT - 1).
- */
 export function OpponentSpectrumColumnView(props: OpponentSpectrumColumnViewProps): JSX.Element {
   const heightPercentage = (props.columnHeight / SPECTRUM_MAXIMUM_HEIGHT) * 100;
 

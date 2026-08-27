@@ -6,12 +6,6 @@ export type OpponentSpectrumListViewProps = {
   readonly opponents: readonly OpponentSpectrumSample[];
 };
 
-/**
- * Resolves the "ALIVE"/"DEAD" label and header class for one opponent.
- *
- * @param opponent - The opponent to describe.
- * @returns The status label and the CSS class name for the card header.
- */
 function describeOpponentStatus(opponent: OpponentSpectrumSample): { statusLabel: string; headClassName: string } {
   if (opponent.isAlive) {
     return { statusLabel: 'ALIVE', headClassName: styles.cardHead ?? '' };
@@ -20,12 +14,6 @@ function describeOpponentStatus(opponent: OpponentSpectrumSample): { statusLabel
   return { statusLabel: 'DEAD', headClassName: `${styles.cardHead} ${styles.cardHeadDead}` };
 }
 
-/**
- * The "OPPONENTS" panel: one spectrum card per opponent in the room,
- * updated in real time (once the socket layer exists).
- *
- * @param props - The opponents currently in the room.
- */
 export function OpponentSpectrumListView(props: OpponentSpectrumListViewProps): JSX.Element {
   return (
     <>
