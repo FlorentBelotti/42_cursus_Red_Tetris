@@ -34,15 +34,6 @@ export type PieceSequenceGenerator = () => TetrominoType;
  * Reads one element out of an array by its index, and throws instead of
  * silently returning `undefined` if the index does not exist.
  *
- * This project's TypeScript settings turn on `noUncheckedIndexedAccess`,
- * which means reading `someArray[someIndex]` normally gives back a type of
- * "TetrominoType, or maybe undefined" - even in places like this file where
- * the surrounding code guarantees the index is always valid. This helper is
- * the one place that turns that guarantee back into a plain, non-undefined
- * `TetrominoType`, and it is written so that if the guarantee were ever
- * broken by a future change, the mistake would fail loudly instead of
- * quietly handing out `undefined` as if it were a real tetromino type.
- *
  * @param tetrominoTypes - The array to read from.
  * @param indexToRead - The position to read.
  * @returns The tetromino type found at `indexToRead`.
@@ -68,13 +59,8 @@ function readTetrominoTypeAtIndex(
  * one position to the left and repeat, until reaching the very first
  * position.
  *
- * The `orderedTetrominoTypes` argument is never changed by this function -
- * CLAUDE.md rule C2 forbids mutating function arguments - a new array is
- * built and returned instead.
- *
  * @param orderedTetrominoTypes - The tetromino types to shuffle, in their
- *   starting order. In this file, this is always the full list of seven
- *   types, but the function works for any list.
+ *   starting order.
  * @param randomNumberGenerator - Supplies the random numbers that decide
  *   the new order. Pass a `RandomNumberGenerator` built by
  *   `createSeededRandomNumberGenerator` so the shuffle is reproducible.
@@ -111,12 +97,9 @@ function shuffleTetrominoTypes(
 
 /**
  * Builds a new piece sequence generator that follows the 7-bag rule
- * described at the top of this file, driven entirely by `seed`.
  *
  * @param seed - The round's shared seed, the same number the server sends
- *   in the `game:round_started` event's `pieceSequenceSeed` field. Every
- *   piece this generator will ever hand out is fully determined by this one
- *   number.
+ *   in the `game:round_started` event's `pieceSequenceSeed` field.
  * @returns A `PieceSequenceGenerator` function. Call it once to get the
  *   first piece of the round, call it again for the next piece, and so on
  *   for as long as the round lasts.
