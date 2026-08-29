@@ -4,11 +4,7 @@ import type { JoinRejectionReasonCode, RoomJoinRequestPayload } from 'shared';
 import type { Game } from '../domain/game';
 import type { GameRoomRegistry } from '../domain/game_room_registry';
 import { Player } from '../domain/player';
-import {
-  GameAlreadyRunningError,
-  GameEndedError,
-  NameAlreadyInUse,
-} from '../errors/management_errors';
+import { GameAlreadyRunningError, NameAlreadyInUse } from '../errors/management_errors';
 import { releaseSocketFromItsRoom, type SocketRoomSession } from './connection_lifecycle_handler';
 import { broadcastRoomStateToRoom } from './room_state_broadcaster';
 import type { TypedSocket, TypedSocketIoServer } from './typed_socket_aliases';
@@ -90,10 +86,6 @@ function seatPlayerOrRejectJoin(
 
 function resolveJoinRejectionReasonCode(joinFailure: unknown): JoinRejectionReasonCode {
   if (joinFailure instanceof GameAlreadyRunningError) {
-    return 'game_already_started';
-  }
-
-  if (joinFailure instanceof GameEndedError) {
     return 'game_already_started';
   }
 

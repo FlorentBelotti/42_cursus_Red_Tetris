@@ -11,10 +11,3 @@ export class NameAlreadyInUse extends Error {
     this.name = 'NameAlreadyInUse';
   }
 }
-
-export class GameEndedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'GameEndedError';
-  }
-}

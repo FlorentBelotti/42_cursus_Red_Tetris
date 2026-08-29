@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  GameAlreadyRunningError,
-  GameEndedError,
-  NameAlreadyInUse,
-} from '../errors/management_errors';
+import { GameAlreadyRunningError, NameAlreadyInUse } from '../errors/management_errors';
 import { Game } from './game';
 import { Player } from './player';
 
@@ -465,13 +461,18 @@ describe('Game elimination and winner (C14)', () => {
     expect(game.countPlayersStillAlive()).toBe(2);
   });
 
-  it('refuses new players once the round has finished', () => {
+  it('accepts new players once the round has finished, before it is relaunched', () => {
     const alice = createPlayerNamed('alice');
     const game = new Game(alice);
     game.startRound();
     game.markPlayerAsEliminated(alice);
 
-    expect(() => game.addPlayer(createPlayerNamed('bob'))).toThrow(GameEndedError);
+    const bob = createPlayerNamed('bob');
+
+    expect(() => game.addPlayer(bob)).not.toThrow();
+    expect(game.getRoomPublicState().players.map((player) => player.playerName)).toContain(
+      'bob',
+    );
   });
 
   it('refuses new players while the round is running (C13)', () => {

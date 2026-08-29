@@ -1,5 +1,5 @@
 import {Player} from "./player"
-import {GameAlreadyRunningError, GameEndedError, NameAlreadyInUse} from "../errors/management_errors"
+import {GameAlreadyRunningError, NameAlreadyInUse} from "../errors/management_errors"
 import {HostSuccessionResolver} from "./host_succession_resolver"
 import {PlayerPublicState, RoomPublicState, RoomStatus} from "shared"
 
@@ -35,12 +35,6 @@ export class Game {
     if (this.status === "running") {
       throw new GameAlreadyRunningError(
         'This game cannot welcome any more players for it has already started',
-      );
-    }
-
-    if (this.status === "finished") {
-      throw new GameEndedError(
-        'This game cannot welcome any more players for it is already finished',
       );
     }
 
