@@ -17,90 +17,114 @@ between sessions and between the two of you.
 
 ## Where things stand — 2026-08-27
 
-**Backend is done.** Config, HTTP, all five domain classes (`Piece`, `Player`,
-`Game`, `GameRoomRegistry`, `HostSuccessionResolver`), all five socket handler
-modules and a real end-to-end socket.io-client integration suite are all
-implemented and tested. Every graded rule the backend owns is closed: **C9,
-C10 (seed broadcast + relay), C11 (penalty routing), C12 (host succession),
-C13 (join gating), C14 (elimination/winner resolution), C15.**
+**Backend is functionally complete, including the socket layer.** `config/`,
+`http/`, the three domain classes, `GameRoomRegistry`,
+`HostSuccessionResolver`, and all five socket modules
+(`socket_server_bootstrap`, `connection_lifecycle_handler`,
+`room_membership_event_handler`, `game_lifecycle_event_handler`,
+`player_progress_event_handler`, `room_state_broadcaster`) are implemented,
+typed end-to-end against `shared/src/protocol/`, and tested — including a
+real `socket.io-client` integration suite. Every graded rule the backend owns
+is implemented: **C9, C10, C11, C12, C13, C14.** See "What's left for the
+socket layer" below for the (small) remaining items.
 
 ```
-typecheck  ✓ 0 errors        build  ✓ succeeds
-server: 13 files, 231 tests passing   coverage 98.54 / 98.21 / 95.8 / 98.54  ✓ C7
-shared:  2 files,  26 tests passing   coverage 94.80 / 98.50 / 85.71 / 94.80 ✓ C7
+typecheck  ✓ 0 errors (root)      build  ✓ shared + server succeed
+server test  ✓ 231 passing        coverage  98.48 stmts / 98.03 branch / 95.8 funcs / 98.48 lines  ✓ C7
+shared test  ✓ 39 passing         coverage  96.46 stmts / 99.09 branch / 100 funcs / 96.46 lines  ✓ C7
 ```
 
-**Two unreconciled nits, harmless but still open:**
-- `server/src/domain/game.ts` imports two types via a deep path
-  (`shared/src/domain_types/...`) instead of `from 'shared'`. Confirmed
-  harmless — both imports are type-only and TypeScript elides them from the
-  compiled output entirely — but it is still a §4/§7 violation ("no deep
-  paths") that should be fixed for hygiene.
-- `errors/` is one file, `management_errors.ts`, exporting
-  `GameAlreadyRunningError`, `NameAlreadyInUse`, `GameEndedError`. §4 names
-  three separate files with different class names and no `room_not_found`
-  equivalent. Either split the file to match §4 or amend §4 to match the
-  code — the two must stop disagreeing.
+**§7 is ratified** (2026-08-07) and fully implemented: fire-and-forget on
+progress events, a reconnecting socket is a new player, `roomState` sent in
+full. Nothing in the protocol is open, typed, or unimplemented any more.
 
-**The critical path is now `shared/game_rules/` and `shared/utils/`.** Nothing
-on the client can deal a piece until the seeded 7-bag generator exists — this
-is the one gap blocking all client game-engine work, and it is small,
-self-contained, and unblocked by anything else.
+**Phase 0 is effectively done.** `piece_sequence_generator.ts` and
+`seeded_random_number_generator.ts` landed 2026-08-27 (deterministic LCG +
+7-bag, closures only, tested, exported from the barrel). The only
+outstanding shared item is `domain_types/board_cell_value.ts`.
 
-**The client is the real remaining body of work.** The visual layer is fully
-built — every page, every component, all mock-data-driven — but it is
-disconnected from any real game: `game_engine/`, `network/`, and
-`state/slices/` are all still empty directories, `socket.io-client` is a
-declared dependency that is never imported anywhere in `client/src`, and there
-are zero client tests. See the Frontend section below; this is most of what's
-left to reach a working, playable game.
+**Fixed 2026-08-27:** `server/src/domain/game.ts` imported
+`PlayerPublicState`/`RoomPublicState`/`RoomStatus` via the deep path
+`shared/src/domain_types/...` instead of the `shared` barrel — exactly the
+trap `shared/src/index.ts`'s own docstring warns about. It typechecked fine
+but would have thrown `MODULE_NOT_FOUND` the moment a built server actually
+loaded `game.js`, since `shared/package.json`'s `main` only exposes `dist/`.
+Confirmed by building both workspaces and `require()`-ing the compiled
+`game.js` before and after the fix. Now imports from `'shared'` like every
+other file; all 231 server tests still pass.
 
-**Housekeeping done this session:** every inline `//` and block `/* */ /**
-*/` comment has been stripped from `client/src`, `server/src`, `shared/src`
-and the five config files (`eslint.config.js`, `vite.config.ts`,
-`vitest.config.ts` ×3). **This directly contradicts CLAUDE.md §9** ("Mandatory
-function-level docstrings... Docstrings are JSDoc blocks on every exported
-function, class, and method") **and §10.4** (declaring a task done requires
-following the coding standard). Per §10.6, a conflict between an instruction
-and this file's own standard is reported, not silently resolved: the comment
-removal was done because it was explicitly requested, but §9/§10 have not
-been changed to match, so the two now disagree. Decide one of:
-- amend §9 to drop the JSDoc mandate, or
-- treat comment-free as the current state only and re-add docstrings before
-  the project is graded against §9 as written.
+**The critical path now is the frontend.** `client/` has no engine, state,
+network, hooks, or components yet (see the Frontend section below) — that is
+essentially the entire remaining scope of the project.
+
+**Still open on the backend, not urgent:** reconcile `errors/` with §4 (see
+that section below), decide whether to backfill coverage for
+`main_server_entry_point.ts`'s `listen()`/`require.main` lines (currently
+~53%, doesn't threaten the aggregate C7 gate).
 
 ---
 
-## Phase 0 — Joint: finish `shared/`
+## Phase 0 — Joint: ratify the protocol, then build `shared/`
 
-Everything downstream imports from here, so divergence here desynchronises
-the whole app. The protocol (§7) is ratified and fully implemented — this
-phase is now just the two files nothing else can proceed without, plus one
-type nobody needs yet.
+Do this together before splitting off into `server/` and `client/`. Everything
+downstream imports from here, so divergence here desynchronises the whole app.
 
-- [x] `shared/src/protocol/*` — all four files, ratified and implemented.
-      `shared/src/index.ts` barrel exists; both workspaces import from
-      `'shared'` (except the one deep-import nit above).
-- [x] `shared/src/game_rules/board_dimension_constants.ts` — the single
-      source for 10×20 (C9). **100% covered.**
+- [x] **Ratify the socket protocol** in `CLAUDE.md` §7 — **done 2026-08-07**,
+      warning removed. The three decisions, with rationale, are recorded in §7:
+      - [x] Q1 — **fire-and-forget**, for all three client-to-server progress
+            events. No acknowledgement callback anywhere in
+            `ClientToServerEvents`.
+      - [x] Q2 — **a reconnecting socket is a new player.** The seat is freed at
+            once on `disconnect`, which is what `connection_lifecycle_handler`
+            already does, so that code is now final rather than provisional. A
+            returning client sends a fresh `room:join_request` and is refused
+            mid-round like any other latecomer (C13).
+      - [x] Q3 — **`roomState` in full on every update.**
+            `Game.getRoomPublicState()` already implements this.
+- [x] `shared/src/protocol/socket_event_names.ts` — frozen constant object of
+      event names.
+- [x] `shared/src/protocol/client_to_server_payloads.ts` and
+      `server_to_client_payloads.ts` — payload types for every event in §7.
+- [x] `shared/src/protocol/socket_typed_interfaces.ts` — typed `Socket`
+      interfaces built from the above. Both `TypedSocketIoServer`/`TypedSocket`
+      (server) consume these; no untyped `emit` anywhere in `server/src/socket/*`.
+- [x] `shared/src/game_rules/board_dimension_constants.ts` — the single source
+      for 10×20 (C9); nobody hardcodes these numbers elsewhere. **100% covered.**
 - [x] `shared/src/game_rules/tetromino_type_enum.ts` and
       `tetromino_shape_definitions.ts` — the seven tetrominoes and their
-      rotation states. **100% covered, 14 tests.**
-- [ ] `shared/src/utils/seeded_random_number_generator.ts` — deterministic
-      RNG. **Not started.** Directory is empty.
-- [ ] `shared/src/game_rules/piece_sequence_generator.ts` — pure, seeded
-      7-bag generator (D2, C10), built on the RNG above. **Not started — the
-      single blocker for any client game-engine work.** Must never be forked
-      or reimplemented independently by either side.
-- [x] `shared/src/domain_types/spectrum_column_heights.ts` — **100%
-      covered**, includes an `isValidSpectrumColumnHeights` guard used at the
-      server's socket boundary.
-- [x] `shared/src/domain_types/player_public_state.ts` and
-      `room_public_state.ts` — written, reviewed, in use by the server.
-- [ ] `shared/src/domain_types/board_cell_value.ts` — **not started.** Not
-      urgent by itself, but the client board matrix (below) needs it.
-- [x] `shared/` coverage gate (70/50) — **met: 94.80% statements, 98.50%
-      branches, 85.71% functions.**
+      rotation states. **100% covered**, 156-line test suite.
+- [x] `shared/src/game_rules/piece_sequence_generator.ts` — **done 2026-08-27.**
+      `createPieceSequenceGenerator(seed)`: closure-based 7-bag (Fisher-Yates
+      per bag, refilled on exhaustion), driven by the seeded RNG below (D2,
+      C10). Tested (bag-property + determinism + cross-seed divergence), 100%
+      of its own lines/branches bar one defensive unreachable throw. Exported
+      from the barrel. **Do not fork or reimplement this file independently on
+      either side — see the file's own docstring.**
+- [ ] `shared/src/domain_types/` — shared value types. Nearly done:
+      - [x] `spectrum_column_heights.ts` — **100% covered**, includes an
+            `isValidSpectrumColumnHeights` guard for the socket boundary.
+      - [x] `player_public_state.ts` and `room_public_state.ts` — written by
+            the backend owner in the co-owned `shared/` workspace, in active use
+            by `server/src/domain/game.ts` and the socket layer.
+      - [ ] `board_cell_value.ts` — **the one remaining shared gap**, needed
+            once the client board matrix exists.
+- [x] `shared/src/utils/seeded_random_number_generator.ts` — **done
+      2026-08-27.** `createSeededRandomNumberGenerator(seedValue)`: closure-based
+      LCG (Numerical Recipes constants), deterministic, no `Math.random()`/
+      `Date.now()`. 100% covered. Exported from the barrel.
+- [x] `shared/` coverage gate (70/50) — **met: 96.46% stmts / 99.09% branch /
+      100% funcs / 96.46% lines** (`npm run test:coverage -w shared`,
+      2026-08-27).
+- [x] `shared/src/index.ts` — the barrel exists and both workspaces import
+      from `'shared'`. **One deep-path regression found and fixed 2026-08-27:**
+      `server/src/domain/game.ts` was importing
+      `shared/src/domain_types/{player_public_state,room_public_state}`
+      directly — compiles fine, but is exactly the "typechecks, then throws
+      `MODULE_NOT_FOUND` at runtime" trap this barrel exists to prevent, since
+      `shared/package.json`'s `main` only exposes `dist/`. Now imports from
+      `'shared'`; verified by building both workspaces and `require()`-ing the
+      compiled `game.js`. Worth a quick `grep -rn "from ['\"]shared/src" server
+      client` next time either workspace is touched, in case it recurs.
 
 ---
 
@@ -110,49 +134,135 @@ Owns: HTTP, config, socket layer, domain classes, room lifecycle, seed
 generation, penalty routing, spectrum relay, elimination/winner resolution,
 server tests. Never touches `client/`.
 
-- [x] `config/server_configuration_loader.ts`, `http/static_asset_http_server.ts`,
-      `http/single_page_application_fallback_route.ts` — all implemented and
-      tested, wired from `main_server_entry_point.ts`.
-- [x] `domain/piece.ts`, `domain/player.ts` — implemented, tested, 100%
-      covered.
-- [x] `domain/game.ts` — round seed on `startRound()` (C10/D2), penalty
-      computation (`computePenaltyLineCount`, `listOpponentsToPenalise`, C11),
-      elimination (`markPlayerAsEliminated`), winner resolution
-      (`resolveWinner`, C14), restart via `startRound`, duplicate-name
-      rejection (`NameAlreadyInUse` thrown from `addPlayer`). **100% covered,
-      47 tests.**
-- [x] `domain/game_room_registry.ts` — room name → `Game`, creates on first
-      join, destroys when empty (C14: multiple concurrent rooms). Tested, 22
-      tests.
-- [x] `domain/host_succession_resolver.ts` — host election and promotion
-      (C12), isolated and independently tested. 95.45% covered, 7 tests.
-- [x] `socket/socket_server_bootstrap.ts` — typed `SocketIoServer`, injects a
-      fresh `GameRoomRegistry` per bootstrap (no module-level singleton, so
-      integration tests never leak state between runs).
-- [x] `socket/connection_lifecycle_handler.ts` — connect/disconnect, seat
-      release via `releaseSocketFromItsRoom`, reused by the explicit leave
-      path. 100% covered.
+### Config & HTTP (extract from the current bootstrap)
+- [x] `config/server_configuration_loader.ts` — centralise the `PORT`/env
+      reading currently inlined in `main_server_entry_point.ts`.
+- [x] `http/static_asset_http_server.ts` — the static-file serving currently
+      inlined in the entry point.
+- [x] `http/single_page_application_fallback_route.ts` — the catch-all
+      `index.html` fallback (C5, C6), same source, split out.
+- [x] Slim `main_server_entry_point.ts` down to wiring these pieces together
+      plus the socket bootstrap.
+
+### Domain classes (C3 — the only place classes exist server-side)
+- [x] `domain/piece.ts` — `Piece`: type, rotation index, spawn coordinates.
+      **100% covered, 13 tests.**
+- [x] `domain/player.ts` — `Player`: socket id, name, host flag, alive flag,
+      latest spectrum, round reset. **100% covered.** Carries a `playerId`
+      distinct from `socketId`: the first is the identity the protocol sends
+      and never changes, the second is the current connection. They hold the
+      same value today, and keeping them apart is what would let Q2 be answered
+      "reconnect reclaims the seat" later without `playerId` changing mid-round.
+- [x] `domain/game.ts` — `Game`: player collection, status
+      (`waiting`/`running`/`finished`), round seed, add/remove player, start
+      round, distribute penalties (C11), mark elimination, resolve winner
+      (C14). **Done, 99.36% covered, 47 tests:**
+      - [x] player collection, status, add/remove player
+      - [x] host succession on departure (C12), delegated to the resolver
+      - [x] `getRoomPublicState()` — full room state: status, host id, player list
+      - [x] round seed on `startRound()` (C10, D2) — `getRoundSeed()` consumed by
+            `game_lifecycle_event_handler`'s `announceRoundStarted`
+      - [x] `computePenaltyLineCount` + `listOpponentsToPenalise` (n−1, C11)
+      - [x] `markPlayerAsEliminated` and `resolveWinner` (C14)
+      - [x] restart path
+      - [x] duplicate player name rejected via `NameAlreadyInUse`
+- [x] `domain/game_room_registry.ts` — `GameRoomRegistry`: room name → `Game`,
+      creates on first join, destroys when empty (C14: multiple concurrent
+      rooms). **100% covered, 22 tests.**
+- [x] `domain/host_succession_resolver.ts` — `HostSuccessionResolver`: host
+      election on join, promotion on host departure (C12), isolated for
+      independent unit testing. **C12 closed, 95% covered, 7 tests.** Written as
+      a single invariant — a non-empty room has exactly one host — re-asserted
+      by `Game` after every membership change, so election and succession are
+      the same call.
+
+### Socket layer — **done.** All five modules implemented, typed against
+`shared/src/protocol/` end-to-end (no untyped `emit` anywhere), and covered by
+both per-handler unit tests and a real `socket.io-client` integration suite.
+
+- [x] `socket/socket_server_bootstrap.ts` — attaches `socket.io` to the HTTP
+      server, typed as `TypedSocketIoServer` (`SocketIoServer<ClientToServerEvents,
+      ServerToClientEvents>`). Creates the one `GameRoomRegistry` the process
+      shares and injects it per connection, rather than a module-level
+      singleton, so each bootstrapped server owns its rooms and integration
+      tests never inherit state from a previous test.
+- [x] `socket/connection_lifecycle_handler.ts` — connect/disconnect, including
+      the reconnect semantics ratified in §7 (a reconnecting socket is a new
+      player, Q2). Holds a per-socket `SocketRoomSession` and releases the seat
+      on `disconnect` via exported `releaseSocketFromItsRoom`, reused by the
+      leave path and by re-join-from-another-room.
 - [x] `socket/room_membership_event_handler.ts` — `room:join_request` /
-      `room:leave_request`, host assignment, all four join-rejection reasons
-      (C13). 97.26% covered, 26 tests.
-- [x] `socket/game_lifecycle_event_handler.ts` — `game:start_request`
-      (host-only gating), round start/seed broadcast, round finish. 96.74%
-      covered, 16 tests.
+      `room:leave_request`, host assignment, join rejection reasons (C13).
+      Both earlier bugs are fixed: `USABLE_NAME_PATTERN` is now
+      `/^[\p{L}\p{N}_-]+$/u` (unicode-aware — "Chloé" and digits are accepted),
+      and `findNameProblem` reports `invalid_room_name` vs `invalid_player_name`
+      against the correct field. 26 tests.
+- [x] `socket/game_lifecycle_event_handler.ts` — `game:start_request` (host
+      only, silently ignored otherwise — no rejection event exists because the
+      client never shows the control to a non-host), round start/seed
+      broadcast (`announceRoundStarted`), round finish
+      (`announceRoundFinishedWhenOver`, exported for reuse by the progress
+      handler on elimination). Double-start is treated as a no-op via
+      `GameAlreadyRunningError`, not a crash. 16 tests.
 - [x] `socket/player_progress_event_handler.ts` — `player:spectrum_update`
-      (validated via `isValidSpectrumColumnHeights` before it reaches the
-      domain), `player:lines_cleared` → penalty routing (C11),
-      `player:game_over_report` (D5). 95.87% covered, 26 tests.
-- [x] `socket/room_state_broadcaster.ts` — `room:state_updated` /
-      `game:opponent_spectrum_updated` broadcasts. 100% covered, 11 tests.
-- [x] Real end-to-end socket integration suite (`socket_integration_test.ts`,
-      31 tests) against an ephemeral server with a real `socket.io-client`,
-      covering join/reject flows, host succession, start gating, and the
-      round lifecycle. Flaky-listener bug fixed this session (see below).
-- [ ] `errors/` — reconcile with §4 (see the nit above).
-- [ ] `domain/game.ts` — drop the two deep `shared/src/...` imports in favor
-      of `from 'shared'` (see the nit above).
-- [x] `npm run test:coverage -w server` ≥ thresholds in C7 — **met: 98.54%
-      statements/lines, 98.21% branches, 95.8% functions.**
+      (validated with `isValidSpectrumColumnHeights` before touching the
+      domain), `player:lines_cleared` → server-derived penalty routing (n−1,
+      C11, via `Game.computePenaltyLineCount`/`listOpponentsToPenalise`, never
+      trusting a client-sent penalty count), `player:game_over_report` (D5,
+      triggers `markPlayerAsEliminated` + `announceRoundFinishedWhenOver`).
+      Every handler is gated on `findRunningRoundContext` so a stale report
+      (after the reporter left, or after the round closed) is silently
+      ignored rather than resurrecting closed state. 26 tests.
+- [x] `socket/room_state_broadcaster.ts` — `room:state_updated` (full state,
+      §7 decision 3) and `game:opponent_spectrum_updated` (relayed via the
+      reporting socket's own `.to(room)`, which excludes the reporter — no
+      client-side self-filtering needed). 11 tests.
+
+**What's left for the socket layer** (small, non-blocking):
+- [ ] `errors/` reconciliation (see the Errors section below) — affects
+      `resolveJoinRejectionReasonCode`'s mapping if the error class names or
+      file layout change.
+- [ ] Decide whether a duplicate `game:start_request` from a *former* host
+      (one who just lost the role, e.g. mid-succession race) should be
+      distinguishable from a non-host spam click — currently both are silently
+      ignored, which matches the documented rationale but has no dedicated
+      test for the race specifically.
+- [ ] No rate-limiting/flood protection on any client→server event (not
+      required by the subject, but worth a conscious "out of scope" note
+      rather than silence, given `player:spectrum_update` fires on every
+      piece lock).
+
+### Errors
+- [x] Implemented as a single `errors/management_errors.ts` exporting
+      `GameAlreadyRunningError`, `NameAlreadyInUse` and `GameEndedError`.
+- [ ] **Reconcile with §4**, which names three separate files
+      (`game_already_started_error.ts`, `player_name_already_taken_error.ts`,
+      `room_not_found_error.ts`). The current code has different file and class
+      names, no `room_not_found` equivalent, and an extra `GameEndedError`.
+      Either split the file to match §4 or amend §4 to match the code — but the
+      two must stop disagreeing.
+
+### Tests — **done.** 13 server test files, 231 tests passing.
+- [x] Unit tests for each domain class:
+      - [x] `host_succession_resolver_test.ts` — 7 tests, incl. chained host
+            departures and the solo player leaving
+      - [x] `player_test.ts` — 16 tests, incl. the defensive copies around the
+            spectrum and hostship surviving a round reset
+      - [x] `game_test.ts` — 47 tests, incl. round seed, penalties, elimination,
+            winner resolution, restart, duplicate-name rejection
+      - [x] `game_room_registry_test.ts` — 22 tests
+      - [x] `piece_test.ts` — 13 tests
+- [x] Socket integration tests: `socket_integration_test.ts`, a real
+      `socket.io-client` against an ephemeral server instance (413 lines, 31
+      tests) — join/reject flows, start gating (C13), penalty distribution,
+      spectrum relay, elimination, and win resolution, plus a
+      `socket_integration_test_harness.ts` and `socket_test_doubles.ts` for it.
+- [x] `npm run test:coverage -w server` ≥ thresholds in C7 — **met, with real
+      margin: 98.48% statements / 98.48% lines / 98.03% branches / 95.8%
+      functions** (measured 2026-08-27, after the `game.ts` import fix — all
+      231 tests still pass). Only `main_server_entry_point.ts` sits noticeably
+      lower (~53%, the `listen()`/`require.main` lines aren't exercised), which
+      doesn't threaten the aggregate gate.
 
 ---
 

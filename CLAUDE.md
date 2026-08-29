@@ -354,17 +354,17 @@ amendment to this section, not a judgement call at the call site.
 
 Legend: `not started` · `in progress` · `done` · `blocked`
 
-Last updated: 2026-08-25 (re-analysis of `hmarconn/server_side`).
+Last updated: 2026-08-27 (seeded RNG + 7-bag generator landed).
 
 | Module | Status | Notes |
 |---|---|---|
 | Repository scaffolding (workspaces, tsconfig, ESLint, Vitest, Vite) | done | |
 | `shared/protocol/*` | done | All four files written and ratified (§7). `shared/src/index.ts` barrel now exists; both workspaces import from `'shared'`, no deep paths left. |
-| `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (tested, 156-line suite) · `piece_sequence_generator` ❌ — **not started, the one real gap blocking any actual piece play** |
+| `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (tested, 156-line suite) · `piece_sequence_generator` ✅ implemented (LCG-backed 7-bag, closure-based `createPieceSequenceGenerator`), tested and exported from the barrel — the prior stub (`ShuffleArray`, no body, mistyped import) is replaced |
 | `shared/domain_types/*` | in progress | `spectrum_column_heights` ✅ tested · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ❌ not started |
-| `shared/utils/seeded_random_number_generator` | not started | Needed by `piece_sequence_generator` above |
+| `shared/utils/seeded_random_number_generator` | done | `createSeededRandomNumberGenerator` (LCG, deterministic, closure-based), tested, exported from the barrel |
 | `server/config` + `server/http` | done | Tested (`server_configuration_loader_test`, `static_asset_http_server_test`, `single_page_application_fallback_route_test`) |
-| `server/domain/piece` · `player` · `game` | done | All three implemented and tested. `Game` now covers round seed, penalty computation, elimination, winner resolution and restart |
+| `server/domain/piece` · `player` · `game` | done | All three implemented and tested. `Game` now covers round seed, penalty computation, elimination, winner resolution and restart. **Fixed 2026-08-27:** `game.ts` imported `PlayerPublicState`/`RoomPublicState`/`RoomStatus` via the deep path `shared/src/domain_types/...` instead of the `shared` barrel — typechecked fine, but would have thrown `MODULE_NOT_FOUND` at runtime once built, since `shared/package.json`'s `main` only exposes `dist/`. Now imports from `'shared'`; verified by building both workspaces and `require()`-ing the compiled `game.js`, and all 231 server tests still pass |
 | `server/domain/game_room_registry` · `host_succession_resolver` | done | Both implemented and tested (`game_room_registry_test.ts` now exists) |
 | `server/socket/*` | done | All five handler modules implemented against the typed protocol (`typed_socket_aliases.ts`), each with its own test file, plus a real end-to-end `socket_integration_test.ts` (413 lines) with test doubles/harness |
 | `server/errors/*` | done | Still deviates from §4: one `management_errors.ts` instead of three files, different class names, no `room_not_found` equivalent. Not reconciled — treat §4's error file list as superseded by this module until amended |
@@ -375,14 +375,16 @@ Last updated: 2026-08-25 (re-analysis of `hmarconn/server_side`).
 | `client/components/*` | not started | |
 | Server tests (domain + socket integration) | done | 13 server test files + 2 shared test files, including a real socket.io-client integration suite |
 | Client tests (engine + components) | not started | |
-| Coverage thresholds met (C7) | unverified | Last measured 2026-08-07 at server ~78.65 stmts/lines, 96.31 branch, 86.00 funcs; shared ~50.88 stmts. Substantial server/shared work has landed since (see rows above) — **re-run `npm run test:coverage` to get current numbers**; this session could not (host disk was at 100% capacity, `npm install` failed with `ENOSPC`) |
+| Coverage thresholds met (C7) | done | Re-measured 2026-08-27: server 98.48% stmts / 98.03% branch / 95.8% funcs / 98.48% lines (231 tests); shared 96.46% stmts / 99.09% branch / 100% funcs / 96.46% lines (39 tests). Both comfortably clear the 70/50 floor |
 
 **Known blockers**
 
-1. `shared/game_rules/piece_sequence_generator.ts` and
-   `shared/utils/seeded_random_number_generator.ts` do not exist yet. Nothing
-   on either side can deal a piece until they do — this is the critical path
-   for starting client work.
+1. ~~`shared/game_rules/piece_sequence_generator.ts` and
+   `shared/utils/seeded_random_number_generator.ts` do not exist yet.~~
+   Resolved 2026-08-27: both implemented (root `typecheck`, `lint`, and
+   `test:coverage -w shared` all pass; shared coverage 96.46% stmts / 99.09%
+   branch / 100% funcs / 96.46% lines, well above C7). Client engine work can
+   now start.
 2. `shared/domain_types/board_cell_value.ts` does not exist yet (needed once
    the client board matrix is built).
 3. The two compile/blocker items from the previous entry (protocol not

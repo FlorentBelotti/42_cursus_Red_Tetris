@@ -1,8 +1,7 @@
 import {Player} from "./player"
 import {GameAlreadyRunningError, GameEndedError, NameAlreadyInUse} from "../errors/management_errors"
 import {HostSuccessionResolver} from "./host_succession_resolver"
-import {PlayerPublicState} from "shared/src/domain_types/player_public_state"
-import {RoomPublicState, RoomStatus} from "shared/src/domain_types/room_public_state"
+import {PlayerPublicState, RoomPublicState, RoomStatus} from "shared"
 
 const ROUND_SEED_VALUE_COUNT = 1000000
 

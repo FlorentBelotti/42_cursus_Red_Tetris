@@ -64,13 +64,11 @@ function handleRoomJoinRequest(
   session.seatedPlayer = joiningPlayer;
 
   socket.join(payload.roomName);
-
   socket.emit(SOCKET_EVENT_NAMES.ROOM_JOIN_ACCEPTED, {
     playerId: joiningPlayer.getPlayerId(),
     isHost: joiningPlayer.isHost(),
     roomState: joinedGame.getRoomPublicState(),
   });
-
   broadcastRoomStateToRoom(socketIoServer, gameRoomRegistry, payload.roomName);
 }
 
