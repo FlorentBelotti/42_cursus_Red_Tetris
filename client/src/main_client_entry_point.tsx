@@ -1,6 +1,8 @@
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { ApplicationRouter } from './application_router';
+import { store } from './state/redux_store_configuration';
 import './styles/design_tokens.css';
 
 const rootElement = document.getElementById('root');
@@ -10,7 +12,9 @@ if (rootElement === null) {
 }
 
 createRoot(rootElement).render(
-  <BrowserRouter>
-    <ApplicationRouter />
-  </BrowserRouter>,
+  <Provider store={store}>
+    <BrowserRouter>
+      <ApplicationRouter />
+    </BrowserRouter>
+  </Provider>,
 );

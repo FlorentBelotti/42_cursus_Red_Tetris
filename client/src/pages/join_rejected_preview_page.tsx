@@ -15,6 +15,7 @@ const VALID_REASON_CODES: readonly JoinRejectedReasonCode[] = [
   'game_already_started',
   'player_name_already_taken',
   'invalid_room_name',
+  'invalid_player_name',
 ];
 
 const DEFAULT_REASON_CODE: JoinRejectedReasonCode = 'game_already_started';

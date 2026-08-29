@@ -1,57 +1,76 @@
-import { useCallback, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { PlayerPublicState } from 'shared';
+
 import { ApplicationShell } from '../components/layout/application_shell';
 import { RoomLobbyView } from '../components/room/room_lobby_view';
-import { NextPiecePreviewView } from '../components/board/next_piece_preview_view';
-import { StatsPanelView } from '../components/board/stats_panel_view';
 import { PlayerBoardGridView } from '../components/board/player_board_grid_view';
-import { OpponentSpectrumListView } from '../components/opponents/opponent_spectrum_list_view';
+import { PlayerDataConsoleView } from '../components/room/player_data_console_view';
 import { GameOverOverlayView } from '../components/feedback/game_over_overlay_view';
+import { JoinRejectedView } from '../components/feedback/join_rejected_view';
+import { KeyboardPromptView } from '../components/ui/keyboard_prompt_view';
+import { projectBoardForDisplay } from '../game_engine/board_display_projection';
 import { useKeyboardInputBindings, type KeyboardInputHandler } from '../hooks/use_keyboard_input_bindings';
+import { useGravityIntervalTicker } from '../hooks/use_gravity_interval_ticker';
 import { useRoomUrlParameters } from '../hooks/use_room_url_parameters';
-import { ROOM_LOBBY_SAMPLE_PLAYERS } from '../mock_data/room_lobby_sample_players';
-import { NEXT_PIECE_PREVIEW_CELLS } from '../mock_data/next_piece_preview_sample';
-import { PLACEHOLDER_BOARD_CELLS } from '../mock_data/placeholder_board_state';
-import { PLACEHOLDER_LINES_CLEARED_COUNT, PLACEHOLDER_PENALTY_LINES_SENT_COUNT } from '../mock_data/placeholder_round_stats';
-import { OPPONENT_SPECTRUM_SAMPLES } from '../mock_data/opponent_spectrum_sample_data';
-import { PLACEHOLDER_ROUND_WINNER_NAME } from '../mock_data/game_over_outcome_sample';
+import { requestGameStart, requestRoomJoin, requestRoomLeave } from '../network/socket_redux_middleware';
+import { resolveJoinRejectedReasonMessage } from '../mock_data/join_rejected_reason_messages';
+import { JOIN_REJECTED_PAGE_KEY_LEGEND, isJoinRejectedRetryKey } from '../page_access/join_rejected_page_access';
+import { IN_GAME_PAGE_KEY_LEGEND, isInGameLeaveKey } from '../page_access/in_game_page_access';
 import {
   isRoomLobbyLeaveKey,
   isRoomLobbyStartGameKey,
   resolveRoomLobbyKeyLegend,
   resolveRoomLobbyPrompt,
 } from '../page_access/room_lobby_page_access';
-import { IN_GAME_PAGE_KEY_LEGEND, isInGameLeaveKey, isInGameRoundOverShortcutKey } from '../page_access/in_game_page_access';
 import {
   isRoundOverBackToLobbyKey,
   isRoundOverRestartKey,
   resolveRoundOverKeyLegend,
   resolveRoundOverOverlayContent,
 } from '../page_access/round_over_page_access';
+import { localGameActions } from '../state/slices/local_game_slice';
+import { roomMembershipActions } from '../state/slices/room_membership_slice';
+import { useAppDispatch, useAppSelector } from '../state/redux_store_configuration';
 import styles from './room_route_page.module.css';
 
-type RoundStatus = 'waiting' | 'running' | 'finished';
-
-function resolveIsHostFromQueryParameter(hostQueryValue: string | null): boolean {
-  if (hostQueryValue === '0') {
-    return false;
-  }
-
-  return true;
+function findPlayerNameById(players: readonly PlayerPublicState[], playerId: string | null): string | null {
+  const found = players.find((player) => player.playerId === playerId);
+  return found === undefined ? null : found.playerName;
 }
 
 export function RoomRoutePage(): JSX.Element {
   const { room, playerName } = useRoomUrlParameters();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isHost = resolveIsHostFromQueryParameter(searchParams.get('host'));
-  const [roundStatus, setRoundStatus] = useState<RoundStatus>('waiting');
+  const dispatch = useAppDispatch();
+  const roomMembership = useAppSelector((state) => state.roomMembership);
+  const localGame = useAppSelector((state) => state.localGame);
+
+  useEffect(() => {
+    dispatch(requestRoomJoin({ roomName: room, playerName }));
+
+    return () => {
+      dispatch(requestRoomLeave());
+      dispatch(roomMembershipActions.left());
+    };
+  }, [dispatch, room, playerName]);
+
+  const isHost = roomMembership.roomState !== null && roomMembership.roomState.hostPlayerId === roomMembership.localPlayerId;
+  const roundStatus = roomMembership.roomState?.status ?? 'waiting';
 
   const handleKeyDown: KeyboardInputHandler = useCallback(
     (event) => {
+      if (roomMembership.rejectionReason !== null) {
+        if (isJoinRejectedRetryKey(event)) {
+          navigate('/');
+          return true;
+        }
+        return false;
+      }
+
       if (roundStatus === 'waiting') {
         if (isRoomLobbyStartGameKey(event, isHost)) {
-          setRoundStatus('running');
+          dispatch(requestGameStart());
           return true;
         }
         if (isRoomLobbyLeaveKey(event)) {
@@ -62,8 +81,24 @@ export function RoomRoutePage(): JSX.Element {
       }
 
       if (roundStatus === 'running') {
-        if (isInGameRoundOverShortcutKey(event)) {
-          setRoundStatus('finished');
+        if (event.key === 'ArrowLeft') {
+          dispatch(localGameActions.movedLeft());
+          return true;
+        }
+        if (event.key === 'ArrowRight') {
+          dispatch(localGameActions.movedRight());
+          return true;
+        }
+        if (event.key === 'ArrowUp') {
+          dispatch(localGameActions.rotated());
+          return true;
+        }
+        if (event.key === 'ArrowDown') {
+          dispatch(localGameActions.gravityTicked());
+          return true;
+        }
+        if (event.key === ' ') {
+          dispatch(localGameActions.hardDropped());
           return true;
         }
         if (isInGameLeaveKey(event)) {
@@ -74,19 +109,45 @@ export function RoomRoutePage(): JSX.Element {
       }
 
       if (isRoundOverRestartKey(event, isHost)) {
-        setRoundStatus('running');
+        dispatch(requestGameStart());
         return true;
       }
       if (isRoundOverBackToLobbyKey(event)) {
-        setRoundStatus('waiting');
+        navigate('/');
         return true;
       }
       return false;
     },
-    [roundStatus, isHost, navigate],
+    [dispatch, navigate, roomMembership.rejectionReason, roundStatus, isHost],
   );
 
   useKeyboardInputBindings(handleKeyDown);
+
+  const onGravityTick = useCallback(() => {
+    dispatch(localGameActions.gravityTicked());
+  }, [dispatch]);
+  useGravityIntervalTicker(roundStatus === 'running' && localGame.isGameOver === false, onGravityTick);
+
+  if (roomMembership.rejectionReason !== null) {
+    const reasonMessage = resolveJoinRejectedReasonMessage(roomMembership.rejectionReason);
+
+    return (
+      <ApplicationShell room={room} playerName={playerName} socketStatus="LINK LOST" legend={JOIN_REJECTED_PAGE_KEY_LEGEND}>
+        <div className={styles.body}>
+          <JoinRejectedView displayCode={reasonMessage.displayCode} explanation={reasonMessage.explanation} />
+          <KeyboardPromptView text="> PRESS [ENTER] TO TRY AGAIN" state="active" cursor />
+        </div>
+      </ApplicationShell>
+    );
+  }
+
+  if (roomMembership.roomState === null) {
+    return (
+      <ApplicationShell room={room} playerName={playerName} socketStatus="CONNECTING" legend={[]}>
+        <div className={styles.body}>CONNECTING...</div>
+      </ApplicationShell>
+    );
+  }
 
   if (roundStatus === 'waiting') {
     const startPrompt = resolveRoomLobbyPrompt(isHost);
@@ -99,7 +160,7 @@ export function RoomRoutePage(): JSX.Element {
         legend={resolveRoomLobbyKeyLegend(isHost)}
       >
         <RoomLobbyView
-          players={ROOM_LOBBY_SAMPLE_PLAYERS}
+          players={roomMembership.roomState.players}
           startPromptText={startPrompt.text}
           startPromptState={startPrompt.state}
         />
@@ -112,7 +173,8 @@ export function RoomRoutePage(): JSX.Element {
 
   if (roundStatus === 'finished') {
     legend = resolveRoundOverKeyLegend(isHost);
-    const overlayContent = resolveRoundOverOverlayContent(isHost, playerName, PLACEHOLDER_ROUND_WINNER_NAME);
+    const winnerName = findPlayerNameById(roomMembership.roomState.players, roomMembership.lastRoundWinnerPlayerId);
+    const overlayContent = resolveRoundOverOverlayContent(isHost, playerName, winnerName);
     overlayElement = (
       <GameOverOverlayView
         title={overlayContent.title}
@@ -127,19 +189,15 @@ export function RoomRoutePage(): JSX.Element {
     <ApplicationShell room={room} playerName={playerName} socketStatus="CONNECTED" legend={legend}>
       <div className={styles.body}>
         <div className={styles.gameGrid}>
-          <div className={styles.aside}>
-            <NextPiecePreviewView cells={NEXT_PIECE_PREVIEW_CELLS} />
-            <StatsPanelView
-              linesClearedCount={PLACEHOLDER_LINES_CLEARED_COUNT}
-              penaltyLinesSentCount={PLACEHOLDER_PENALTY_LINES_SENT_COUNT}
-            />
-          </div>
+          <PlayerBoardGridView cells={projectBoardForDisplay(localGame.board, localGame.activePiece)} />
 
-          <PlayerBoardGridView cells={PLACEHOLDER_BOARD_CELLS} />
-
-          <div className={styles.opponentsColumn}>
-            <OpponentSpectrumListView opponents={OPPONENT_SPECTRUM_SAMPLES} />
-          </div>
+          <PlayerDataConsoleView
+            players={roomMembership.roomState.players}
+            localPlayerId={roomMembership.localPlayerId}
+            linesClearedCount={localGame.linesClearedCount}
+            penaltyLinesSentCount={localGame.penaltyLinesSentCount}
+            opponentSpectrums={roomMembership.opponentSpectrums}
+          />
         </div>
 
         {overlayElement}

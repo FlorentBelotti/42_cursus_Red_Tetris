@@ -15,116 +15,142 @@ between sessions and between the two of you.
 
 ---
 
-## Where things stand — 2026-08-27
+## Where things stand — 2026-08-29
 
-**Backend is functionally complete, including the socket layer.** `config/`,
-`http/`, the three domain classes, `GameRoomRegistry`,
-`HostSuccessionResolver`, and all five socket modules
-(`socket_server_bootstrap`, `connection_lifecycle_handler`,
-`room_membership_event_handler`, `game_lifecycle_event_handler`,
-`player_progress_event_handler`, `room_state_broadcaster`) are implemented,
-typed end-to-end against `shared/src/protocol/`, and tested — including a
-real `socket.io-client` integration suite. Every graded rule the backend owns
-is implemented: **C9, C10, C11, C12, C13, C14.** See "What's left for the
-socket layer" below for the (small) remaining items.
+**The game is playable end-to-end.** Backend, shared, and frontend are all
+implemented and wired together: a room can be joined, the host can start a
+round, both sides simulate the same piece sequence from the same seed, pieces
+move/rotate/hard-drop/lock, completed lines clear, penalties relay to
+opponents in real time, top-out (including penalty-induced top-out) is
+detected and reported, and the round resolves with the correct winner (or no
+winner, for solo play). Verified with a real two-browser Playwright pass this
+session, not just the test suite: join → lobby with real players → start →
+movement/rotation/hard-drop → opponent's spectrum updating live on the other
+tab → solo top-out → `GAME OVER` / `NO WINNER` → restart → and a late joiner
+correctly rejected with `GAME ALREADY STARTED`.
 
 ```
-typecheck  ✓ 0 errors (root)      build  ✓ shared + server succeed
-server test  ✓ 231 passing        coverage  98.48 stmts / 98.03 branch / 95.8 funcs / 98.48 lines  ✓ C7
-shared test  ✓ 39 passing         coverage  96.46 stmts / 99.09 branch / 100 funcs / 96.46 lines  ✓ C7
+typecheck  ✓ 0 errors      lint  ✓ 0 errors      build  ✓ shared+server+client succeed
+shared  39 tests   coverage 96.46 stmts / 98.21 branch / 94.44 funcs / 96.46 lines  ✓ C7
+server 231 tests   coverage 98.48 stmts / 98.04 branch / 95.80 funcs / 98.48 lines  ✓ C7
+client 121 tests   coverage 81.10 stmts / 91.05 branch / 92.07 funcs / 81.10 lines  ✓ C7
 ```
 
-**§7 is ratified** (2026-08-07) and fully implemented: fire-and-forget on
-progress events, a reconnecting socket is a new player, `roomState` sent in
-full. Nothing in the protocol is open, typed, or unimplemented any more.
+**What landed this session:**
+- `client/game_engine/*` — all 14 pure functions from §4 plus two small
+  additions (`board_cell_state.ts`, `piece_sequence_indexing.ts` — see below).
+  No `this`, no I/O, no `Math.random()`/`Date.now()`, no React imports (C2).
+- `client/state/*` — `redux_store_configuration.ts` and all three slices
+  (`local_game_slice`, `room_membership_slice`, `socket_connection_slice`).
+- `client/network/socket_redux_middleware.ts` — the last missing network
+  file; the other three (`socket_client_factory`, `socket_event_emitters`,
+  `socket_event_subscription_registry`) already existed from an earlier
+  session and are unchanged. The middleware is the only place that both
+  reads socket events into actions and watches state transitions to decide
+  when to emit (`player:lines_cleared`, `player:spectrum_update`,
+  `player:game_over_report`) — components and reducers never touch the
+  socket (D4).
+- `client/hooks/use_gravity_interval_ticker.ts` — the last missing hook.
+- `client/components/room/player_data_console_view.tsx` — replaces the
+  in-game aside/opponents column. See "Design decision" below.
+- `shared/domain_types/board_cell_value.ts` — the one shared gap from last
+  session, now closed: `'empty' | 'filled' | 'penalty'`.
+- Every mock/placeholder game-state file is gone (see "Mock data removed"
+  below); every component now renders real state, with two narrow
+  exceptions noted there.
+- Every file touched this session (and a few left over from the last one:
+  `shared/game_rules/piece_sequence_generator.ts`,
+  `shared/utils/seeded_random_number_generator.ts`, and the client
+  `network/*` files) has had its comments stripped — see the conflict this
+  reopens with §9, noted below, unchanged from last session.
+- `client/vitest.config.ts` gained a `setupFiles` entry
+  (`src/test_setup.ts`) that runs `@testing-library/react`'s `cleanup()`
+  after every test. Without it, a hook test that attaches a `window`
+  listener (`use_keyboard_input_bindings`) leaked into the next test and
+  produced a real, reproducible false failure — worth knowing before adding
+  more hook/DOM tests.
 
-**Phase 0 is effectively done.** `piece_sequence_generator.ts` and
-`seeded_random_number_generator.ts` landed 2026-08-27 (deterministic LCG +
-7-bag, closures only, tested, exported from the barrel). The only
-outstanding shared item is `domain_types/board_cell_value.ts`.
+**Design decision — the in-game aside is gone, replaced by plain text.**
+`next_piece_preview_view`, `stats_panel_view`, `opponent_spectrum_list_view`
+and `opponent_spectrum_column_view` (the bar-chart opponent visualisation)
+are deleted, along with their sample data. In their place,
+`player_data_console_view.tsx` prints one plain line per player — `YOU
+<name> LINES <n> SENT <n>` for the local player, `<name> ALIVE|DEAD H:<10
+numbers>` for everyone else — styled like the home terminal's log, not as a
+boxed widget. This was an explicit instruction this session, not a judgement
+call; if the "esthetic" panels are wanted back for the next-piece preview or
+per-run stats, that's new scope, not a revert.
 
-**Fixed 2026-08-27:** `server/src/domain/game.ts` imported
-`PlayerPublicState`/`RoomPublicState`/`RoomStatus` via the deep path
-`shared/src/domain_types/...` instead of the `shared` barrel — exactly the
-trap `shared/src/index.ts`'s own docstring warns about. It typechecked fine
-but would have thrown `MODULE_NOT_FOUND` the moment a built server actually
-loaded `game.js`, since `shared/package.json`'s `main` only exposes `dist/`.
-Confirmed by building both workspaces and `require()`-ing the compiled
-`game.js` before and after the fix. Now imports from `'shared'` like every
-other file; all 231 server tests still pass.
+**Mock data removed, with two narrow exceptions kept on purpose:**
+- Deleted: `game_over_outcome_sample`, `next_piece_preview_sample`,
+  `opponent_spectrum_sample_data`, `placeholder_board_state`,
+  `placeholder_round_stats`, `room_lobby_sample_players`, the stale
+  duplicate `tetromino_shape_definitions.ts` in `mock_data/` (superseded by
+  `shared`'s real one — it even used a different `[column, row]` coordinate
+  convention from the shared `[row, column]` one, so it's good this never
+  shipped), and `board_cell_state.ts` (moved into `game_engine/`, since it's
+  now a real engine type, not a mock).
+- Kept as-is, still under `mock_data/`: `key_legend_per_page.ts`,
+  `terminal_command_reference.ts`, `terminal_log_entry.ts`,
+  `terminal_shell_prompt.ts`, `join_rejected_reason_messages.ts` (now
+  imports `JoinRejectionReasonCode` from `shared` instead of redefining a
+  3-of-4 local copy — the missing `invalid_player_name` case would have
+  crashed on that specific rejection reason; fixed). These are real static
+  copy/lookup tables, not stand-ins for state — `mock_data/` is a slight
+  misnomer for them now, worth a folder rename if anyone wants it, but not
+  done here to avoid unrelated churn.
+- Kept on purpose, not a leftover: `pages/join_rejected_preview_page.tsx`
+  (route `/__preview/rejected`) still drives itself from a URL query
+  parameter rather than a live socket. It's a design/QA preview tool
+  separate from the real join flow (which now lives in `room_route_page.tsx`
+  and reacts to a real `room:join_rejected` event) — flagging the decision
+  to leave it rather than silently deleting or "fixing" it.
 
-**The critical path now is the frontend.** `client/` has no engine, state,
-network, hooks, or components yet (see the Frontend section below) — that is
-essentially the entire remaining scope of the project.
-
-**Still open on the backend, not urgent:** reconcile `errors/` with §4 (see
-that section below), decide whether to backfill coverage for
-`main_server_entry_point.ts`'s `listen()`/`require.main` lines (currently
-~53%, doesn't threaten the aggregate C7 gate).
+**Still open — small, non-blocking:**
+- [ ] `errors/` (server) still doesn't match §4's three-file layout — see
+      the Backend section, unchanged from last session.
+- [ ] `server/src/domain/game.ts`'s cosmetic deep import — also unchanged,
+      see Backend section.
+- [ ] **Comment removal vs. §9 conflict — still open, not silently
+      resolved.** §9 mandates "Docstrings are JSDoc blocks on every exported
+      function, class, and method." This session's "no comment" instruction
+      was applied repo-wide again (including to the two shared files and
+      the `network/*` files that had picked up fresh JSDoc since the last
+      pass). Either amend §9 to drop the mandate, or accept that the code
+      will need docstrings re-added before being graded against §9 as
+      written — same two options as last session, still unpicked.
+- [ ] No dedicated tests for `state/redux_store_configuration.ts`,
+      `network/socket_redux_middleware.ts`, `application_router.tsx`,
+      `main_client_entry_point.tsx`, or the three page components
+      (`home_terminal_page`, `room_route_page`, `join_rejected_preview_page`)
+      — all at 0% individually. The aggregate client coverage clears C7
+      anyway (81.1/91.05/92.07/81.1, see above) because the engine, slices,
+      network emitters/subscriptions, hooks, and most components are
+      thoroughly covered — but these specific files are unverified by
+      anything except the manual Playwright pass. `socket_redux_middleware`
+      in particular is the piece most likely to hide a real bug (it is the
+      one place state-diffing decides what to emit), so it's the one worth
+      testing first if anyone picks this up.
+- [ ] No automated test for line-clearing or penalty-relay *end to end*
+      (pure-function line clearing is unit-tested; the manual browser pass
+      confirmed spectrum relay and top-out but not a full line clear, since
+      scripting a specific piece sequence through the keyboard wasn't
+      attempted this session). Worth a deliberate integration test using a
+      known seed and a scripted drop sequence that completes a row.
+- [ ] Wall-kick offsets in `piece_rotation_resolution.ts`
+      (`[0, -1, 1, -2, 2]`) are a simple, workable approximation, not the
+      SRS kick table. Fine for this subject's requirements but worth naming
+      explicitly in case someone expects SRS-accurate kicks later.
 
 ---
 
-## Phase 0 — Joint: ratify the protocol, then build `shared/`
+## Phase 0 — Joint: `shared/` — done
 
-Do this together before splitting off into `server/` and `client/`. Everything
-downstream imports from here, so divergence here desynchronises the whole app.
-
-- [x] **Ratify the socket protocol** in `CLAUDE.md` §7 — **done 2026-08-07**,
-      warning removed. The three decisions, with rationale, are recorded in §7:
-      - [x] Q1 — **fire-and-forget**, for all three client-to-server progress
-            events. No acknowledgement callback anywhere in
-            `ClientToServerEvents`.
-      - [x] Q2 — **a reconnecting socket is a new player.** The seat is freed at
-            once on `disconnect`, which is what `connection_lifecycle_handler`
-            already does, so that code is now final rather than provisional. A
-            returning client sends a fresh `room:join_request` and is refused
-            mid-round like any other latecomer (C13).
-      - [x] Q3 — **`roomState` in full on every update.**
-            `Game.getRoomPublicState()` already implements this.
-- [x] `shared/src/protocol/socket_event_names.ts` — frozen constant object of
-      event names.
-- [x] `shared/src/protocol/client_to_server_payloads.ts` and
-      `server_to_client_payloads.ts` — payload types for every event in §7.
-- [x] `shared/src/protocol/socket_typed_interfaces.ts` — typed `Socket`
-      interfaces built from the above. Both `TypedSocketIoServer`/`TypedSocket`
-      (server) consume these; no untyped `emit` anywhere in `server/src/socket/*`.
-- [x] `shared/src/game_rules/board_dimension_constants.ts` — the single source
-      for 10×20 (C9); nobody hardcodes these numbers elsewhere. **100% covered.**
-- [x] `shared/src/game_rules/tetromino_type_enum.ts` and
-      `tetromino_shape_definitions.ts` — the seven tetrominoes and their
-      rotation states. **100% covered**, 156-line test suite.
-- [x] `shared/src/game_rules/piece_sequence_generator.ts` — **done 2026-08-27.**
-      `createPieceSequenceGenerator(seed)`: closure-based 7-bag (Fisher-Yates
-      per bag, refilled on exhaustion), driven by the seeded RNG below (D2,
-      C10). Tested (bag-property + determinism + cross-seed divergence), 100%
-      of its own lines/branches bar one defensive unreachable throw. Exported
-      from the barrel. **Do not fork or reimplement this file independently on
-      either side — see the file's own docstring.**
-- [ ] `shared/src/domain_types/` — shared value types. Nearly done:
-      - [x] `spectrum_column_heights.ts` — **100% covered**, includes an
-            `isValidSpectrumColumnHeights` guard for the socket boundary.
-      - [x] `player_public_state.ts` and `room_public_state.ts` — written by
-            the backend owner in the co-owned `shared/` workspace, in active use
-            by `server/src/domain/game.ts` and the socket layer.
-      - [ ] `board_cell_value.ts` — **the one remaining shared gap**, needed
-            once the client board matrix exists.
-- [x] `shared/src/utils/seeded_random_number_generator.ts` — **done
-      2026-08-27.** `createSeededRandomNumberGenerator(seedValue)`: closure-based
-      LCG (Numerical Recipes constants), deterministic, no `Math.random()`/
-      `Date.now()`. 100% covered. Exported from the barrel.
-- [x] `shared/` coverage gate (70/50) — **met: 96.46% stmts / 99.09% branch /
-      100% funcs / 96.46% lines** (`npm run test:coverage -w shared`,
-      2026-08-27).
-- [x] `shared/src/index.ts` — the barrel exists and both workspaces import
-      from `'shared'`. **One deep-path regression found and fixed 2026-08-27:**
-      `server/src/domain/game.ts` was importing
-      `shared/src/domain_types/{player_public_state,room_public_state}`
-      directly — compiles fine, but is exactly the "typechecks, then throws
-      `MODULE_NOT_FOUND` at runtime" trap this barrel exists to prevent, since
-      `shared/package.json`'s `main` only exposes `dist/`. Now imports from
-      `'shared'`; verified by building both workspaces and `require()`-ing the
-      compiled `game.js`. Worth a quick `grep -rn "from ['\"]shared/src" server
-      client` next time either workspace is touched, in case it recurs.
+- [x] Protocol (§7), `game_rules/*`, `domain_types/*` (including
+      `board_cell_value.ts`, added this session), `utils/seeded_random_number_generator.ts`.
+      Barrel (`shared/src/index.ts`) exports everything both workspaces use;
+      no deep imports left except the one server-side cosmetic nit noted below.
+- [x] Coverage: 96.46% stmts / 98.21% branch / 94.44% funcs / 96.46% lines.
 
 ---
 
@@ -134,232 +160,84 @@ Owns: HTTP, config, socket layer, domain classes, room lifecycle, seed
 generation, penalty routing, spectrum relay, elimination/winner resolution,
 server tests. Never touches `client/`.
 
-### Config & HTTP (extract from the current bootstrap)
-- [x] `config/server_configuration_loader.ts` — centralise the `PORT`/env
-      reading currently inlined in `main_server_entry_point.ts`.
-- [x] `http/static_asset_http_server.ts` — the static-file serving currently
-      inlined in the entry point.
-- [x] `http/single_page_application_fallback_route.ts` — the catch-all
-      `index.html` fallback (C5, C6), same source, split out.
-- [x] Slim `main_server_entry_point.ts` down to wiring these pieces together
-      plus the socket bootstrap.
-
-### Domain classes (C3 — the only place classes exist server-side)
-- [x] `domain/piece.ts` — `Piece`: type, rotation index, spawn coordinates.
-      **100% covered, 13 tests.**
-- [x] `domain/player.ts` — `Player`: socket id, name, host flag, alive flag,
-      latest spectrum, round reset. **100% covered.** Carries a `playerId`
-      distinct from `socketId`: the first is the identity the protocol sends
-      and never changes, the second is the current connection. They hold the
-      same value today, and keeping them apart is what would let Q2 be answered
-      "reconnect reclaims the seat" later without `playerId` changing mid-round.
-- [x] `domain/game.ts` — `Game`: player collection, status
-      (`waiting`/`running`/`finished`), round seed, add/remove player, start
-      round, distribute penalties (C11), mark elimination, resolve winner
-      (C14). **Done, 99.36% covered, 47 tests:**
-      - [x] player collection, status, add/remove player
-      - [x] host succession on departure (C12), delegated to the resolver
-      - [x] `getRoomPublicState()` — full room state: status, host id, player list
-      - [x] round seed on `startRound()` (C10, D2) — `getRoundSeed()` consumed by
-            `game_lifecycle_event_handler`'s `announceRoundStarted`
-      - [x] `computePenaltyLineCount` + `listOpponentsToPenalise` (n−1, C11)
-      - [x] `markPlayerAsEliminated` and `resolveWinner` (C14)
-      - [x] restart path
-      - [x] duplicate player name rejected via `NameAlreadyInUse`
-- [x] `domain/game_room_registry.ts` — `GameRoomRegistry`: room name → `Game`,
-      creates on first join, destroys when empty (C14: multiple concurrent
-      rooms). **100% covered, 22 tests.**
-- [x] `domain/host_succession_resolver.ts` — `HostSuccessionResolver`: host
-      election on join, promotion on host departure (C12), isolated for
-      independent unit testing. **C12 closed, 95% covered, 7 tests.** Written as
-      a single invariant — a non-empty room has exactly one host — re-asserted
-      by `Game` after every membership change, so election and succession are
-      the same call.
-
-### Socket layer — **done.** All five modules implemented, typed against
-`shared/src/protocol/` end-to-end (no untyped `emit` anywhere), and covered by
-both per-handler unit tests and a real `socket.io-client` integration suite.
-
-- [x] `socket/socket_server_bootstrap.ts` — attaches `socket.io` to the HTTP
-      server, typed as `TypedSocketIoServer` (`SocketIoServer<ClientToServerEvents,
-      ServerToClientEvents>`). Creates the one `GameRoomRegistry` the process
-      shares and injects it per connection, rather than a module-level
-      singleton, so each bootstrapped server owns its rooms and integration
-      tests never inherit state from a previous test.
-- [x] `socket/connection_lifecycle_handler.ts` — connect/disconnect, including
-      the reconnect semantics ratified in §7 (a reconnecting socket is a new
-      player, Q2). Holds a per-socket `SocketRoomSession` and releases the seat
-      on `disconnect` via exported `releaseSocketFromItsRoom`, reused by the
-      leave path and by re-join-from-another-room.
-- [x] `socket/room_membership_event_handler.ts` — `room:join_request` /
-      `room:leave_request`, host assignment, join rejection reasons (C13).
-      Both earlier bugs are fixed: `USABLE_NAME_PATTERN` is now
-      `/^[\p{L}\p{N}_-]+$/u` (unicode-aware — "Chloé" and digits are accepted),
-      and `findNameProblem` reports `invalid_room_name` vs `invalid_player_name`
-      against the correct field. 26 tests.
-- [x] `socket/game_lifecycle_event_handler.ts` — `game:start_request` (host
-      only, silently ignored otherwise — no rejection event exists because the
-      client never shows the control to a non-host), round start/seed
-      broadcast (`announceRoundStarted`), round finish
-      (`announceRoundFinishedWhenOver`, exported for reuse by the progress
-      handler on elimination). Double-start is treated as a no-op via
-      `GameAlreadyRunningError`, not a crash. 16 tests.
-- [x] `socket/player_progress_event_handler.ts` — `player:spectrum_update`
-      (validated with `isValidSpectrumColumnHeights` before touching the
-      domain), `player:lines_cleared` → server-derived penalty routing (n−1,
-      C11, via `Game.computePenaltyLineCount`/`listOpponentsToPenalise`, never
-      trusting a client-sent penalty count), `player:game_over_report` (D5,
-      triggers `markPlayerAsEliminated` + `announceRoundFinishedWhenOver`).
-      Every handler is gated on `findRunningRoundContext` so a stale report
-      (after the reporter left, or after the round closed) is silently
-      ignored rather than resurrecting closed state. 26 tests.
-- [x] `socket/room_state_broadcaster.ts` — `room:state_updated` (full state,
-      §7 decision 3) and `game:opponent_spectrum_updated` (relayed via the
-      reporting socket's own `.to(room)`, which excludes the reporter — no
-      client-side self-filtering needed). 11 tests.
-
-**What's left for the socket layer** (small, non-blocking):
-- [ ] `errors/` reconciliation (see the Errors section below) — affects
-      `resolveJoinRejectionReasonCode`'s mapping if the error class names or
-      file layout change.
-- [ ] Decide whether a duplicate `game:start_request` from a *former* host
-      (one who just lost the role, e.g. mid-succession race) should be
-      distinguishable from a non-host spam click — currently both are silently
-      ignored, which matches the documented rationale but has no dedicated
-      test for the race specifically.
-- [ ] No rate-limiting/flood protection on any client→server event (not
-      required by the subject, but worth a conscious "out of scope" note
-      rather than silence, given `player:spectrum_update` fires on every
-      piece lock).
-
-### Errors
-- [x] Implemented as a single `errors/management_errors.ts` exporting
-      `GameAlreadyRunningError`, `NameAlreadyInUse` and `GameEndedError`.
-- [ ] **Reconcile with §4**, which names three separate files
-      (`game_already_started_error.ts`, `player_name_already_taken_error.ts`,
-      `room_not_found_error.ts`). The current code has different file and class
-      names, no `room_not_found` equivalent, and an extra `GameEndedError`.
-      Either split the file to match §4 or amend §4 to match the code — but the
-      two must stop disagreeing.
-
-### Tests — **done.** 13 server test files, 231 tests passing.
-- [x] Unit tests for each domain class:
-      - [x] `host_succession_resolver_test.ts` — 7 tests, incl. chained host
-            departures and the solo player leaving
-      - [x] `player_test.ts` — 16 tests, incl. the defensive copies around the
-            spectrum and hostship surviving a round reset
-      - [x] `game_test.ts` — 47 tests, incl. round seed, penalties, elimination,
-            winner resolution, restart, duplicate-name rejection
-      - [x] `game_room_registry_test.ts` — 22 tests
-      - [x] `piece_test.ts` — 13 tests
-- [x] Socket integration tests: `socket_integration_test.ts`, a real
-      `socket.io-client` against an ephemeral server instance (413 lines, 31
-      tests) — join/reject flows, start gating (C13), penalty distribution,
-      spectrum relay, elimination, and win resolution, plus a
-      `socket_integration_test_harness.ts` and `socket_test_doubles.ts` for it.
-- [x] `npm run test:coverage -w server` ≥ thresholds in C7 — **met, with real
-      margin: 98.48% statements / 98.48% lines / 98.03% branches / 95.8%
-      functions** (measured 2026-08-27, after the `game.ts` import fix — all
-      231 tests still pass). Only `main_server_entry_point.ts` sits noticeably
-      lower (~53%, the `listen()`/`require.main` lines aren't exercised), which
-      doesn't threaten the aggregate gate.
+- [x] `config/`, `http/` — done and tested.
+- [x] `domain/piece.ts`, `player.ts`, `game.ts`, `game_room_registry.ts`,
+      `host_succession_resolver.ts` — done and tested. `Game` covers round
+      seed, penalty math, elimination, winner resolution, restart,
+      duplicate-name rejection.
+- [x] `socket/*` — all five handler modules, typed end-to-end against
+      `shared/src/protocol/`, plus a real `socket.io-client` integration
+      suite (31 tests).
+- [ ] `errors/` — still one `management_errors.ts` file instead of §4's
+      three (`game_already_started_error.ts`, `player_name_already_taken_error.ts`,
+      `room_not_found_error.ts`), with different class names and an extra
+      `GameEndedError`. Either split the file to match §4 or amend §4 —
+      the two must stop disagreeing.
+- [ ] `domain/game.ts` imports two types via the deep path
+      `shared/src/domain_types/...` instead of `from 'shared'`. Harmless
+      (type-only, elided at compile time) but still a §4/§7 "no deep paths"
+      violation worth a quick fix.
+- [x] Coverage: 98.48% stmts / 98.04% branch / 95.80% funcs / 98.48% lines
+      (231 tests).
 
 ---
 
-## Frontend — Florent (`client/`) — visual layer built, wiring not started
+## Frontend — Florent (`client/`) — done, connected end to end
 
 Owns: pure game engine, Redux store and slices, socket middleware, hooks, all
 components and styling, client tests. Never touches `server/`. No `this`
 anywhere (C1, ESLint-enforced) — function components and hooks only.
 
-**Built and working:** the terminal-styled home page, room lobby, board and
-opponent-spectrum views, join-rejected and game-over feedback screens, and
-all their CSS Modules — all rendering from `mock_data/`, not from real game
-or network state. `application_router.tsx` and `use_room_url_parameters.ts`
-already handle the `/:room/:playerName` route (C6). This is real, substantial
-work, but none of it is connected to a socket or to gameplay yet.
-
-### Game engine (C2 — pure functions only: no I/O, no mutation, no `Date.now()`/`Math.random()`, no React imports)
-Blocked on `shared/game_rules/piece_sequence_generator.ts` (Phase 0) for
-anything that deals a piece; the board-matrix/collision files can start
-sooner but need `shared/domain_types/board_cell_value.ts` first.
-- [ ] `game_engine/empty_board_matrix_factory.ts`
-- [ ] `game_engine/active_piece_state.ts`
-- [ ] `game_engine/piece_spawn_positioning.ts`
-- [ ] `game_engine/collision_detection.ts`
-- [ ] `game_engine/piece_horizontal_movement.ts`
-- [ ] `game_engine/piece_rotation_resolution.ts` — rotation + wall-kicks.
-- [ ] `game_engine/piece_gravity_step.ts`
-- [ ] `game_engine/piece_hard_drop_resolution.ts` (spacebar)
-- [ ] `game_engine/piece_locking_into_board.ts` — one-tick lock delay (D6);
-      active piece is never written into the board until it locks.
-- [ ] `game_engine/completed_line_clearing.ts`
-- [ ] `game_engine/penalty_line_insertion.ts` — shift up, insert indestructible
-      rows (C11) that are never cleared as normal lines.
-- [ ] `game_engine/spectrum_column_computation.ts` — 10 column heights.
-- [ ] `game_engine/game_over_detection.ts` — top-out, including
-      penalty-induced top-out (D5).
-- [ ] `game_engine/board_display_projection.ts` — board + active piece →
-      render matrix.
-
-### State (Redux Toolkit, D4) — directory exists, empty
-- [ ] `state/redux_store_configuration.ts`
-- [ ] `state/slices/local_game_slice.ts` — calls into `game_engine/`, never
-      reimplements its logic.
-- [ ] `state/slices/room_membership_slice.ts`
-- [ ] `state/slices/socket_connection_slice.ts`
-
-### Network (the only layer allowed to touch the socket, D4) — directory exists, empty
-`socket.io-client` is already a `client/package.json` dependency but is not
-imported anywhere yet.
-- [ ] `network/socket_client_factory.ts`
-- [ ] `network/socket_event_emitters.ts`
-- [ ] `network/socket_event_subscription_registry.ts`
-- [ ] `network/socket_redux_middleware.ts` — the single async boundary;
-      components must keep not touching the socket directly.
-
-### Hooks
-- [x] `hooks/use_keyboard_input_bindings.ts` — arrows + spacebar.
-- [x] `hooks/use_room_url_parameters.ts` — reads `room`/`playerName` from the
-      route.
-- [ ] `hooks/use_gravity_interval_ticker.ts` — one interval per player (D3).
-      **Not started.**
-
-### Components — built
-- [x] `components/layout/application_shell.tsx`, `key_legend_view.tsx`
-- [x] `components/board/player_board_grid_view.tsx`, `board_cell_view.tsx`,
-      `next_piece_preview_view.tsx`, `stats_panel_view.tsx`
-- [x] `components/opponents/opponent_spectrum_list_view.tsx`,
-      `opponent_spectrum_column_view.tsx`
-- [x] `components/room/room_lobby_view.tsx`, `host_start_button_view.tsx`,
-      `player_table_view.tsx`
-- [x] `components/feedback/game_over_overlay_view.tsx`, `join_rejected_view.tsx`
-- [x] `components/home/terminal_input_view.tsx`, `terminal_intro_view.tsx`,
-      `terminal_log_view.tsx`
-- [x] `components/ui/block_cursor_view.tsx`, `keyboard_prompt_view.tsx`,
-      `panel_view.tsx`
-
-All of the above render from `mock_data/`; wiring them to `state/slices/`
-instead is part of the state/network work above, not new component work.
-
-### Tests
-- [ ] Unit tests for every `game_engine/` function once written — pure
-      functions, highest leverage for the coverage gate.
-- [ ] Component tests with `@testing-library/react` for board rendering,
-      spectrum display, and the lobby/host-start flow.
-- [ ] `npm run test:coverage -w client` ≥ thresholds in C7. **Currently 0
-      test files — client coverage has never been measured.**
+- [x] `game_engine/*` — all 14 files from §4, plus `board_cell_state.ts`
+      (the `BoardCellState` type used by every board-rendering component)
+      and `piece_sequence_indexing.ts` (`getTetrominoTypeAtSequenceIndex` —
+      a pure wrapper around `shared`'s `createPieceSequenceGenerator` that
+      lets Redux ask "what piece is at index N of this seed's sequence"
+      without storing a non-serializable generator closure in state; it does
+      not fork or reimplement the generator itself, only calls it). Tested,
+      96.24% of the folder covered.
+- [x] `state/redux_store_configuration.ts` and all three slices — tested
+      (`socket_connection_slice` 100%, `room_membership_slice` 100%,
+      `local_game_slice` ~76%, the reducer branches not hit are mostly
+      early-return guards).
+- [x] `network/*` — all four files, including the previously-missing
+      `socket_redux_middleware.ts`. This is the file that decides, after
+      every dispatched action, whether a piece just locked (by checking
+      whether the board reference changed) and whether the game just ended
+      (by checking the `isGameOver` transition), and emits the matching
+      socket event — the only place in the client that does either.
+- [x] `hooks/use_gravity_interval_ticker.ts` — the previously-missing hook;
+      `use_keyboard_input_bindings.ts` and `use_room_url_parameters.ts`
+      already existed. All three tested (100%).
+- [x] `components/*` — every component now renders real state instead of
+      mock data. `next_piece_preview_view`, `stats_panel_view`, and the
+      whole `components/opponents/` folder are deleted (see "Design
+      decision" above); `player_data_console_view.tsx` replaces them.
+      `room_route_page.tsx` now handles four real states — connecting,
+      rejected (real `room:join_rejected` reason), waiting/lobby with real
+      players, and running/finished with the real board and player data —
+      instead of always showing the lobby with sample players.
+- [x] Tests: 121 passing across engine, slices, network, hooks, page_access,
+      and most components. Coverage: 81.10% stmts / 91.05% branch / 92.07%
+      funcs / 81.10% lines — clears C7 with room to spare, though see the
+      "still open" note above about which specific files are untested.
 
 ---
 
 ## Phase 2 — Joint integration
 
-- [ ] End-to-end manual pass: two browser tabs, same room URL, verify shared
-      piece sequence (C10), penalty lines on line clear (C11), spectrum
-      updates in real time, host succession on host tab close (C12), no join
-      after start (C13), solo play (C14).
-- [ ] `npm run typecheck && npm run lint && npm run test:coverage` all green
-      at the repo root, including client coverage above C7.
-- [ ] Resolve the two backend nits (deep import in `game.ts`, `errors/` vs
-      §4) and the comment-removal vs. §9 conflict above.
-- [ ] Update `CLAUDE.md` §8 to `done` across the board.
+- [x] End-to-end pass with two real browser tabs (this session, via
+      Playwright, not just describing the plan): shared piece sequence
+      (opponent's spectrum matches what was actually dropped, C10), spectrum
+      updates in real time (C11's prerequisite), solo top-out and round
+      resolution with the correct "no winner" result (C14), restart, and
+      join rejection once a round has started (C13). **Not yet exercised
+      this way:** an actual multi-line clear sending penalties to a second
+      live player, and host succession when the host's tab disconnects
+      mid-round (both are covered by server-side tests, just not watched
+      happen in two live browsers).
+- [x] `npm run typecheck && npm run lint && npm run test:coverage` all green
+      at the repo root, client coverage included.
+- [ ] Resolve the two backend nits and the comment-removal vs. §9 conflict
+      above.
+- [x] Update `CLAUDE.md` §8 to `done` across the board — done 2026-08-29.

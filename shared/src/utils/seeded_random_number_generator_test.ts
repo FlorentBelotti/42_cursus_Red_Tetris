@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSeededRandomNumberGenerator } from './seeded_random_number_generator';
+import { createSeededRandomNumberGenerator } from './seeded_random_number_generator.js';
 
 const NUMBERS_TO_CHECK_PER_TEST = 200;
 
-/**
- * Calls a random number generator several times in a row and collects every
- * result, in order. Used throughout this file so each test can compare
- * whole sequences instead of a single call.
- */
 function collectRandomNumbers(seedValue: number, howMany: number): number[] {
   const randomNumberGenerator = createSeededRandomNumberGenerator(seedValue);
   const collectedNumbers: number[] = [];

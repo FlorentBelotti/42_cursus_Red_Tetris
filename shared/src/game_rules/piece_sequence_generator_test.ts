@@ -1,16 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPieceSequenceGenerator } from './piece_sequence_generator';
-import { ALL_TETROMINO_TYPES, TetrominoType } from './tetromino_type_enum';
+import { createPieceSequenceGenerator } from './piece_sequence_generator.js';
+import { ALL_TETROMINO_TYPES, TetrominoType } from './tetromino_type_enum.js';
 
-const PIECE_COUNT_FOR_A_LONG_SEQUENCE = 350; // 50 full bags of 7 pieces
+const PIECE_COUNT_FOR_A_LONG_SEQUENCE = 350;
 const TETROMINO_TYPES_PER_BAG = ALL_TETROMINO_TYPES.length;
 
-/**
- * Calls a piece sequence generator several times in a row and collects
- * every tetromino type it hands out, in order. Used throughout this file
- * so each test can compare whole sequences instead of a single call.
- */
 function collectPieceSequence(seed: number, howManyPieces: number): TetrominoType[] {
   const getNextPieceType = createPieceSequenceGenerator(seed);
   const collectedPieceTypes: TetrominoType[] = [];
@@ -22,10 +17,6 @@ function collectPieceSequence(seed: number, howManyPieces: number): TetrominoTyp
   return collectedPieceTypes;
 }
 
-/**
- * Splits a long piece sequence into consecutive groups of seven, the same
- * size as one 7-bag round.
- */
 function splitIntoBagSizedGroups(pieceSequence: readonly TetrominoType[]): TetrominoType[][] {
   const bagSizedGroups: TetrominoType[][] = [];
 

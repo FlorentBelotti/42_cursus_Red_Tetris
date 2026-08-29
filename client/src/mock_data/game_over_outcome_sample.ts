@@ -1,1 +1,0 @@
-export const PLACEHOLDER_ROUND_WINNER_NAME = 'KAMI';

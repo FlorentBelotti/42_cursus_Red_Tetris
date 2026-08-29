@@ -1,4 +1,4 @@
-import type { RoomLobbySamplePlayer } from '../../mock_data/room_lobby_sample_players';
+import type { PlayerPublicState } from 'shared';
 import type { KeyboardPromptState } from '../ui/keyboard_prompt_view';
 import { PanelView } from '../ui/panel_view';
 import { PlayerTableView } from './player_table_view';
@@ -6,7 +6,7 @@ import { HostStartButtonView } from './host_start_button_view';
 import styles from './room_lobby_view.module.css';
 
 export type RoomLobbyViewProps = {
-  readonly players: readonly RoomLobbySamplePlayer[];
+  readonly players: readonly PlayerPublicState[];
   readonly startPromptText: string;
   readonly startPromptState: KeyboardPromptState;
 };

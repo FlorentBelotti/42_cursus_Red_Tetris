@@ -1,12 +1,12 @@
 import { Fragment } from 'react';
-import type { RoomLobbySamplePlayer } from '../../mock_data/room_lobby_sample_players';
+import type { PlayerPublicState } from 'shared';
 import styles from './player_table_view.module.css';
 
 export type PlayerTableViewProps = {
-  readonly players: readonly RoomLobbySamplePlayer[];
+  readonly players: readonly PlayerPublicState[];
 };
 
-function describePlayerRow(player: RoomLobbySamplePlayer): { role: string; cellClassName: string } {
+function describePlayerRow(player: PlayerPublicState): { role: string; cellClassName: string } {
   if (player.isHost) {
     return { role: 'HOST', cellClassName: `${styles.cell} ${styles.cellHost}` };
   }

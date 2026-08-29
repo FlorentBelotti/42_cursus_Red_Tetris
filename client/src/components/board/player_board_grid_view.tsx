@@ -1,4 +1,4 @@
-import type { BoardCellState } from '../../mock_data/board_cell_state';
+import type { BoardCellState } from '../../game_engine/board_cell_state';
 import { BoardCellView } from './board_cell_view';
 import styles from './player_board_grid_view.module.css';
 

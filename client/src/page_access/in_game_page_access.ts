@@ -5,7 +5,3 @@ export const IN_GAME_PAGE_KEY_LEGEND: readonly KeyLegendEntry[] = IN_GAME_KEY_LE
 export function isInGameLeaveKey(event: KeyboardEvent): boolean {
   return event.key === 'Escape';
 }
-
-export function isInGameRoundOverShortcutKey(event: KeyboardEvent): boolean {
-  return event.key === 'Enter';
-}

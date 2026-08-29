@@ -1,27 +1,10 @@
 .gameGrid {
   height: 100%;
   display: grid;
-  grid-template-columns: 16ch minmax(0, auto) 1fr;
+  grid-template-columns: minmax(0, auto) 1fr;
   grid-template-rows: minmax(0, 1fr);
   gap: var(--rt-sp-9);
   padding-top: var(--rt-sp-3);
-}
-
-.aside {
-  display: flex;
-  flex-direction: column;
-  gap: var(--rt-sp-4);
-  min-height: 0;
-  overflow: hidden;
-}
-
-.opponentsColumn {
-  display: flex;
-  flex-direction: column;
-  gap: var(--rt-sp-4);
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .body {

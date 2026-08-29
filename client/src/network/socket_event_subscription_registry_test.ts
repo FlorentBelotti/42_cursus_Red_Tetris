@@ -6,15 +6,10 @@ import {
   type SocketEventHandlers,
 } from './socket_event_subscription_registry';
 
-/**
- * Builds a fake socket whose only working members are mocked `on`/`off`,
- * which is all `registerSocketEventSubscriptions` ever calls.
- */
 function createFakeSocket(): TypedClientSocket {
   return { on: vi.fn(), off: vi.fn() } as unknown as TypedClientSocket;
 }
 
-/** Builds a full set of handlers, each a distinct mock function. */
 function createFakeHandlers(): SocketEventHandlers {
   return {
     onConnected: vi.fn(),
@@ -31,11 +26,6 @@ function createFakeHandlers(): SocketEventHandlers {
   };
 }
 
-/**
- * Every event name `registerSocketEventSubscriptions` is expected to
- * subscribe to, paired with the `SocketEventHandlers` field it must be
- * wired to.
- */
 const EXPECTED_EVENT_NAME_TO_HANDLER_KEY: ReadonlyArray<readonly [string, keyof SocketEventHandlers]> = [
   ['connect', 'onConnected'],
   ['disconnect', 'onDisconnected'],

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { BoardCellState } from '../../mock_data/board_cell_state';
+import type { BoardCellState } from '../../game_engine/board_cell_state';
 import styles from './board_cell_view.module.css';
 
 export type BoardCellViewProps = {

@@ -10,10 +10,6 @@ import {
   emitRoomLeaveRequest,
 } from './socket_event_emitters';
 
-/**
- * Builds a fake socket whose only working member is a mocked `emit`, which
- * is all every function in `socket_event_emitters.ts` ever calls.
- */
 function createFakeSocket(): TypedClientSocket {
   return { emit: vi.fn() } as unknown as TypedClientSocket;
 }

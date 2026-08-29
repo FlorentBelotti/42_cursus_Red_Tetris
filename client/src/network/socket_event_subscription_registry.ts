@@ -13,30 +13,12 @@ import type { Socket } from 'socket.io-client';
 
 import type { TypedClientSocket } from './socket_client_factory';
 
-/**
- * The three connection-lifecycle event names socket.io-client reserves for
- * itself. They are not part of the application protocol in
- * `shared/src/protocol/socket_event_names.ts` — every socket.io connection
- * has them, whatever it is used for — but the player still needs to see
- * whether they are connected, so this file listens for them alongside the
- * eight application events.
- */
 const SOCKET_RESERVED_EVENT_NAMES = Object.freeze({
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
   CONNECT_ERROR: 'connect_error',
 } as const);
 
-/**
- * One handler per event this client can ever receive from the server: the
- * eight application events defined in
- * `shared/src/protocol/server_to_client_payloads.ts`, plus the three
- * connection-lifecycle events above.
- *
- * Every field is required on purpose. If a new server-to-client event is
- * ever added to the protocol, whoever builds this object next gets a
- * compile error here instead of an event that silently does nothing.
- */
 export interface SocketEventHandlers {
   readonly onConnected: () => void;
   readonly onDisconnected: (reason: Socket.DisconnectReason) => void;
@@ -51,29 +33,8 @@ export interface SocketEventHandlers {
   readonly onGameRoundFinished: (payload: GameRoundFinishedPayload) => void;
 }
 
-/**
- * A function that removes every listener `registerSocketEventSubscriptions`
- * registered. Call it when whatever registered the handlers is torn down, so
- * a remount never leaves duplicate listeners behind — this matters in
- * particular under React StrictMode, which mounts effects twice in
- * development.
- */
 export type UnsubscribeFromSocketEvents = () => void;
 
-/**
- * Wires every event the server can send into the matching handler in
- * `handlers`.
- *
- * This is the only file that calls `socket.on(...)`: nothing outside
- * `client/src/network/` should listen to the socket directly. The caller —
- * in practice, `socket_redux_middleware.ts` —
- * decides what each event actually does, usually dispatching one Redux
- * action; this file only decides which socket event maps to which handler.
- *
- * @param socket - The socket to listen on.
- * @param handlers - One callback per event this socket can receive.
- * @returns A function that removes every listener registered here.
- */
 export function registerSocketEventSubscriptions(
   socket: TypedClientSocket,
   handlers: SocketEventHandlers,

@@ -7,20 +7,21 @@ export type {
   TetrominoRotationState,
   TetrominoRotationStates,
   TetrominoShapeDefinition,
-} from './game_rules/tetromino_shape_definitions';
-export { createPieceSequenceGenerator } from './game_rules/piece_sequence_generator';
-export type { PieceSequenceGenerator } from './game_rules/piece_sequence_generator';
+} from './game_rules/tetromino_shape_definitions.js';
+export { createPieceSequenceGenerator } from './game_rules/piece_sequence_generator.js';
+export type { PieceSequenceGenerator } from './game_rules/piece_sequence_generator.js';
 
 export {
   createEmptySpectrumColumnHeights,
   isValidSpectrumColumnHeights,
-} from './domain_types/spectrum_column_heights';
-export type { SpectrumColumnHeights } from './domain_types/spectrum_column_heights';
-export type { PlayerPublicState } from './domain_types/player_public_state';
-export type { RoomPublicState, RoomStatus } from './domain_types/room_public_state';
+} from './domain_types/spectrum_column_heights.js';
+export type { SpectrumColumnHeights } from './domain_types/spectrum_column_heights.js';
+export type { PlayerPublicState } from './domain_types/player_public_state.js';
+export type { RoomPublicState, RoomStatus } from './domain_types/room_public_state.js';
+export type { BoardCellValue } from './domain_types/board_cell_value.js';
 
-export { createSeededRandomNumberGenerator } from './utils/seeded_random_number_generator';
-export type { RandomNumberGenerator } from './utils/seeded_random_number_generator';
+export { createSeededRandomNumberGenerator } from './utils/seeded_random_number_generator.js';
+export type { RandomNumberGenerator } from './utils/seeded_random_number_generator.js';
 
 export { SOCKET_EVENT_NAMES } from './protocol/socket_event_names.js';
 export type {

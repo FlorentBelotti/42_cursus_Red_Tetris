@@ -1,7 +1,6 @@
-export type JoinRejectedReasonCode =
-  | 'game_already_started'
-  | 'player_name_already_taken'
-  | 'invalid_room_name';
+import type { JoinRejectionReasonCode } from 'shared';
+
+export type JoinRejectedReasonCode = JoinRejectionReasonCode;
 
 export type JoinRejectedReasonMessage = {
   readonly displayCode: string;
@@ -20,6 +19,10 @@ const JOIN_REJECTED_REASON_MESSAGES: Record<JoinRejectedReasonCode, JoinRejected
   invalid_room_name: {
     displayCode: 'INVALID ROOM NAME',
     explanation: 'ROOM NAME CONTAINS UNSUPPORTED CHARACTERS.',
+  },
+  invalid_player_name: {
+    displayCode: 'INVALID PLAYER NAME',
+    explanation: 'PLAYER NAME CONTAINS UNSUPPORTED CHARACTERS.',
   },
 };
 

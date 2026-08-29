@@ -354,46 +354,47 @@ amendment to this section, not a judgement call at the call site.
 
 Legend: `not started` · `in progress` · `done` · `blocked`
 
-Last updated: 2026-08-27 (seeded RNG + 7-bag generator landed).
+Last updated: 2026-08-29 (client engine/state/network landed; game is
+playable end-to-end).
 
 | Module | Status | Notes |
 |---|---|---|
 | Repository scaffolding (workspaces, tsconfig, ESLint, Vitest, Vite) | done | |
 | `shared/protocol/*` | done | All four files written and ratified (§7). `shared/src/index.ts` barrel now exists; both workspaces import from `'shared'`, no deep paths left. |
-| `shared/game_rules/*` | in progress | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (tested, 156-line suite) · `piece_sequence_generator` ✅ implemented (LCG-backed 7-bag, closure-based `createPieceSequenceGenerator`), tested and exported from the barrel — the prior stub (`ShuffleArray`, no body, mistyped import) is replaced |
-| `shared/domain_types/*` | in progress | `spectrum_column_heights` ✅ tested · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ❌ not started |
+| `shared/game_rules/*` | done | `board_dimension_constants` ✅ · `tetromino_type_enum` ✅ · `tetromino_shape_definitions` ✅ (tested) · `piece_sequence_generator` ✅ (LCG-backed 7-bag, closure-based `createPieceSequenceGenerator`), tested and exported from the barrel |
+| `shared/domain_types/*` | done | `spectrum_column_heights` ✅ tested · `player_public_state` ✅ · `room_public_state` ✅ · `board_cell_value` ✅ added 2026-08-29 (`'empty' \| 'filled' \| 'penalty'`) |
 | `shared/utils/seeded_random_number_generator` | done | `createSeededRandomNumberGenerator` (LCG, deterministic, closure-based), tested, exported from the barrel |
 | `server/config` + `server/http` | done | Tested (`server_configuration_loader_test`, `static_asset_http_server_test`, `single_page_application_fallback_route_test`) |
-| `server/domain/piece` · `player` · `game` | done | All three implemented and tested. `Game` now covers round seed, penalty computation, elimination, winner resolution and restart. **Fixed 2026-08-27:** `game.ts` imported `PlayerPublicState`/`RoomPublicState`/`RoomStatus` via the deep path `shared/src/domain_types/...` instead of the `shared` barrel — typechecked fine, but would have thrown `MODULE_NOT_FOUND` at runtime once built, since `shared/package.json`'s `main` only exposes `dist/`. Now imports from `'shared'`; verified by building both workspaces and `require()`-ing the compiled `game.js`, and all 231 server tests still pass |
-| `server/domain/game_room_registry` · `host_succession_resolver` | done | Both implemented and tested (`game_room_registry_test.ts` now exists) |
-| `server/socket/*` | done | All five handler modules implemented against the typed protocol (`typed_socket_aliases.ts`), each with its own test file, plus a real end-to-end `socket_integration_test.ts` (413 lines) with test doubles/harness |
+| `server/domain/piece` · `player` · `game` | done | All three implemented and tested. `Game` covers round seed, penalty computation, elimination, winner resolution and restart |
+| `server/domain/game_room_registry` · `host_succession_resolver` | done | Both implemented and tested |
+| `server/socket/*` | done | All five handler modules implemented against the typed protocol, each with its own test file, plus a real end-to-end `socket_integration_test.ts` with test doubles/harness |
 | `server/errors/*` | done | Still deviates from §4: one `management_errors.ts` instead of three files, different class names, no `room_not_found` equivalent. Not reconciled — treat §4's error file list as superseded by this module until amended |
-| `client/game_engine/*` | not started | |
-| `client/state/*` | not started | |
-| `client/network/*` | not started | |
-| `client/hooks/*` | not started | |
-| `client/components/*` | not started | |
-| Server tests (domain + socket integration) | done | 13 server test files + 2 shared test files, including a real socket.io-client integration suite |
-| Client tests (engine + components) | not started | |
-| Coverage thresholds met (C7) | done | Re-measured 2026-08-27: server 98.48% stmts / 98.03% branch / 95.8% funcs / 98.48% lines (231 tests); shared 96.46% stmts / 99.09% branch / 100% funcs / 96.46% lines (39 tests). Both comfortably clear the 70/50 floor |
+| `client/game_engine/*` | done | All 14 files from this section plus `board_cell_state.ts` and `piece_sequence_indexing.ts`. Pure, no `this`, no I/O (C2). Tested, 96.24% of the folder covered |
+| `client/state/*` | done | Store config + all three slices, wired through `<Provider>` at the app root |
+| `client/network/*` | done | All four files, including `socket_redux_middleware.ts` — the single place that emits socket events based on state transitions (D4) |
+| `client/hooks/*` | done | All three, including `use_gravity_interval_ticker.ts` |
+| `client/components/*` | done | Every component renders real state; no `mock_data/` game-state stand-ins remain. The in-game aside (next-piece preview, stats panel, opponent spectrum bars) was deleted and replaced by `player_data_console_view.tsx`, a plain-text console-style listing — a deliberate design change this session, not a placeholder |
+| Server tests (domain + socket integration) | done | 13 server test files + 4 shared test files, including a real socket.io-client integration suite |
+| Client tests (engine + slices + network + hooks + most components) | done | 45 test files, 121 tests. Untested: `redux_store_configuration.ts`, `socket_redux_middleware.ts`, `application_router.tsx`, `main_client_entry_point.tsx`, the three page components — all at 0% individually, but the aggregate still clears C7 |
+| Coverage thresholds met (C7) | done | shared 96.46/98.21/94.44/96.46 (stmts/branch/funcs/lines) · server 98.48/98.04/95.80/98.48 · client 81.10/91.05/92.07/81.10. All three comfortably clear 70/70/70/50 |
+| End-to-end playability | done | Verified with two real browser tabs (Playwright) this session: join, lobby, start, shared piece sequence, movement/rotation/hard-drop, live opponent spectrum relay, solo top-out, round finish with correct winner, restart, and join-rejection once a round is running |
 
-**Known blockers**
+**Known gaps (small, non-blocking):**
 
-1. ~~`shared/game_rules/piece_sequence_generator.ts` and
-   `shared/utils/seeded_random_number_generator.ts` do not exist yet.~~
-   Resolved 2026-08-27: both implemented (root `typecheck`, `lint`, and
-   `test:coverage -w shared` all pass; shared coverage 96.46% stmts / 99.09%
-   branch / 100% funcs / 96.46% lines, well above C7). Client engine work can
-   now start.
-2. `shared/domain_types/board_cell_value.ts` does not exist yet (needed once
-   the client board matrix is built).
-3. The two compile/blocker items from the previous entry (protocol not
-   compiling, missing `shared/src/index.ts`) are resolved — both now exist
-   and the protocol is ratified. Not re-verified with a live `typecheck` run
-   this session (see coverage row above); worth confirming once disk space
-   is available.
-4. `client/` is still just scaffolding — no engine, state, network, hooks or
-   components exist. Full backlog is unchanged from §4/§6/§7 of this file.
+1. `server/errors/*` still doesn't match §4's three-file layout (unchanged
+   from prior sessions).
+2. `server/src/domain/game.ts` has one cosmetic deep import
+   (`shared/src/domain_types/...` instead of `from 'shared'`) — harmless
+   (type-only) but worth a quick fix.
+3. Comment removal (this session, repo-wide again) directly conflicts with
+   §9's "mandatory JSDoc docstrings" — flagged, not resolved. See TODO.md.
+4. No end-to-end test (manual or automated) has exercised an actual
+   multi-line clear sending penalties to a second live player, or host
+   succession via a live tab disconnecting — both are covered by server unit
+   tests but not watched happening across two real clients.
+5. Wall-kick offsets in `piece_rotation_resolution.ts` are a simple
+   approximation, not the SRS kick table — sufficient for this subject but
+   worth naming if SRS-accurate kicks are ever expected.
 
 **Update this table at the end of every session.** It is the handover between
 sessions and between the two developers.
