@@ -13,6 +13,15 @@ const LONGEST_ALLOWED_NAME_LENGTH = 20;
 
 const USABLE_NAME_PATTERN = /^[\p{L}\p{N}_-]+$/u;
 
+/**
+ * Listens for join and leave requests and updates the socket's room
+ * membership accordingly, accepting or rejecting joins as needed.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param socket - The socket sending join/leave requests.
+ * @param gameRoomRegistry - Registry used to look up and mutate rooms.
+ * @param session - The socket's current room session, mutated in place.
+ */
 export function registerRoomMembershipEventHandler(
   socketIoServer: TypedSocketIoServer,
   socket: TypedSocket,

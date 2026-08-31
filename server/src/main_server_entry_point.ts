@@ -8,6 +8,11 @@ import {
 } from './http/static_asset_http_server';
 import { bootstrapSocketServer } from './socket/socket_server_bootstrap';
 
+/**
+ * Builds the HTTP server serving the client bundle and bootstraps Socket.IO on top of it.
+ *
+ * @returns The configured but not-yet-listening HTTP server.
+ */
 export function createRedTetrisHttpServer(): HttpServer {
   const application = createStaticAssetHttpApplication(resolveClientBuildDirectoryPath());
   const httpServer = createServer(application);
@@ -17,6 +22,9 @@ export function createRedTetrisHttpServer(): HttpServer {
   return httpServer;
 }
 
+/**
+ * Loads the server configuration, creates the HTTP server, and starts listening.
+ */
 export function startRedTetrisServer(): void {
   const configuration = loadServerConfiguration();
   const httpServer = createRedTetrisHttpServer();

@@ -17,6 +17,15 @@ interface RunningRoundContext {
   game: Game;
 }
 
+/**
+ * Listens for a player's spectrum updates, cleared-line reports, and game-over
+ * reports, and relays penalties / eliminations to the rest of the room.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param socket - The socket sending progress events.
+ * @param gameRoomRegistry - Registry used to look up the player's room.
+ * @param session - The socket's current room session.
+ */
 export function registerPlayerProgressEventHandler(
   socketIoServer: TypedSocketIoServer,
   socket: TypedSocket,

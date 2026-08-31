@@ -44,6 +44,12 @@ function readHttpServerPortFromEnvironment(environment: NodeJS.ProcessEnv): numb
   return parsedPortNumber;
 }
 
+/**
+ * Derives the server configuration from a given environment variables map.
+ *
+ * @param environment - Source of environment variables (e.g. `process.env`).
+ * @returns The resolved server configuration.
+ */
 export function buildServerConfigurationFromEnvironment(
   environment: NodeJS.ProcessEnv,
 ): ServerConfiguration {
@@ -52,6 +58,11 @@ export function buildServerConfigurationFromEnvironment(
   };
 }
 
+/**
+ * Loads `.env` variables and builds the server configuration from `process.env`.
+ *
+ * @returns The resolved server configuration.
+ */
 export function loadServerConfiguration(): ServerConfiguration {
   dotenv.config();
 

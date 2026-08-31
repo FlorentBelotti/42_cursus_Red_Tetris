@@ -11,6 +11,14 @@ export interface SocketRoomSession {
   seatedPlayer: Player | null;
 }
 
+/**
+ * Wires up all the event handlers for one connected socket (room membership,
+ * game lifecycle, player progress) and cleans up its room seat on disconnect.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param socket - The newly connected socket.
+ * @param gameRoomRegistry - Registry used to look up and mutate rooms.
+ */
 export function registerConnectionLifecycleHandler(
   socketIoServer: TypedSocketIoServer,
   socket: TypedSocket,
@@ -27,10 +35,24 @@ export function registerConnectionLifecycleHandler(
   });
 }
 
+/**
+ * Creates a fresh, empty room session for a socket that hasn't joined a room yet.
+ *
+ * @returns A session with no room and no seated player.
+ */
 export function createEmptySocketRoomSession(): SocketRoomSession {
   return { roomName: null, seatedPlayer: null };
 }
 
+/**
+ * Removes the socket's player from its current room, if any, clears the
+ * session, and notifies the rest of the room of the updated state.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param socket - The socket leaving its room.
+ * @param gameRoomRegistry - Registry used to look up and mutate rooms.
+ * @param session - The socket's current room session, mutated in place.
+ */
 export function releaseSocketFromItsRoom(
   socketIoServer: TypedSocketIoServer,
   socket: TypedSocket,

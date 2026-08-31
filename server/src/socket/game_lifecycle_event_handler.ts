@@ -7,6 +7,14 @@ import type { SocketRoomSession } from './connection_lifecycle_handler';
 import { broadcastRoomStateToRoom } from './room_state_broadcaster';
 import type { TypedSocket, TypedSocketIoServer } from './typed_socket_aliases';
 
+/**
+ * Listens for the host's request to start a round and reacts to it.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param socket - The socket sending the start request.
+ * @param gameRoomRegistry - Registry used to look up the player's room.
+ * @param session - The socket's current room session.
+ */
 export function registerGameLifecycleEventHandler(
   socketIoServer: TypedSocketIoServer,
   socket: TypedSocket,
@@ -71,6 +79,14 @@ function announceRoundStarted(
   });
 }
 
+/**
+ * Broadcasts that the round has finished, with the winner's id if there is one.
+ * Does nothing if the game isn't actually finished.
+ *
+ * @param socketIoServer - The Socket.IO server instance.
+ * @param game - The game to check and report on.
+ * @param roomName - The room to broadcast to.
+ */
 export function announceRoundFinishedWhenOver(
   socketIoServer: TypedSocketIoServer,
   game: Game,
